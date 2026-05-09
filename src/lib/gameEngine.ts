@@ -121,7 +121,7 @@ function processGanh(
   const movedPiece = pieces.find((p) => p.id === movedPieceId)!;
   const opponentOwner = movedPiece.owner === "player1" ? "player2" : "player1";
 
-  // 3.1 Model định nghĩa 4 trục quét (Ngang, Dọc, Chéo 1, Chéo 2) đi qua tọa độ mới của quân cờ.
+  // 4.3.1 Model định nghĩa 4 trục quét (Ngang, Dọc, Chéo 1, Chéo 2) đi qua tọa độ mới của quân cờ.
   const axes = [
     { dx: 1, dy: 0 },
     { dx: 0, dy: 1 },
@@ -129,7 +129,7 @@ function processGanh(
     { dx: 1, dy: -1 },
   ];
 
-  // 3.2 Model lặp (Loop) qua từng trục để kiểm tra các vị trí lân cận.
+  // 4.3.2 Model lặp (Loop) qua từng trục để kiểm tra các vị trí lân cận.
   for (const axis of axes) {
     const p1X = newX + axis.dx;
     const p1Y = newY + axis.dy;
@@ -139,15 +139,15 @@ function processGanh(
     const piece1 = pieces.find((p) => p.x === p1X && p.y === p1Y);
     const piece2 = pieces.find((p) => p.x === p2X && p.y === p2Y);
 
-    // 3.3 Model kiểm tra điều kiện "chủ động" và nhận diện kẹp quân (quân mình vừa đi kẹp 2 quân địch).
-    // 3.3a.1 (Alternate Flow): Nếu không có quân kẹp (IF = False) -> Bỏ qua bước 3.4 đi tiếp đến 5.0
+    // 4.3.3 Model kiểm tra điều kiện "chủ động" và nhận diện kẹp quân (quân mình vừa đi kẹp 2 quân địch).
+    // 4.3a.1 (Alternate Flow): Nếu không có quân kẹp (IF = False) -> Bỏ qua bước 4.3.4 đi tiếp đến 4.5
     if (
       piece1 &&
       piece1.owner === opponentOwner &&
       piece2 &&
       piece2.owner === opponentOwner
     ) {
-      // 3.4 Model đưa ID của các quân địch thỏa mãn điều kiện vào mảng danh sách "bị bắt".
+      // 4.3.4 Model đưa ID của các quân địch thỏa mãn điều kiện vào mảng danh sách "bị bắt".
       if (!capturedIds.includes(piece1.id)) capturedIds.push(piece1.id);
       if (!capturedIds.includes(piece2.id)) capturedIds.push(piece2.id);
     }
@@ -195,11 +195,11 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
   // =========================================================================
   // [UC-4: Thực thi luật bắt quân]
   // =========================================================================
-  // 2.0 Model tiến hành cập nhật tọa độ mới cho quân cờ vừa đi trên mảng dữ liệu ảo.
+  // 4.2 Model tiến hành cập nhật tọa độ mới cho quân cờ vừa đi trên mảng dữ liệu ảo.
   piece.x = move.toX;
   piece.y = move.toY;
 
-  // 3.0 Model bắt đầu thực thi thuật toán quét bắt quân (Luật Gánh & Chầu).
+  // 4.3 Model bắt đầu thực thi thuật toán quét bắt quân (Luật Gánh & Chầu).
   const ganhCaptured = processGanh(
     move.pieceId,
     move.toX,
@@ -207,7 +207,7 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
     newState.pieces,
   );
 
-  // 4.0 Model lặp qua mảng danh sách "bị bắt" và tiến hành đổi màu (đổi thuộc tính owner) sang phe người vừa đánh.
+  // 4.4 Model lặp qua mảng danh sách "bị bắt" và tiến hành đổi màu (đổi thuộc tính owner) sang phe người vừa đánh.
   for (const id of ganhCaptured) {
     const capturedPiece = newState.pieces.find((p) => p.id === id);
     if (capturedPiece) capturedPiece.owner = newState.currentPlayer;
@@ -259,6 +259,6 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
   // =========================================================================
   // [UC-4: Thực thi luật bắt quân]
   // =========================================================================
-  // 5.0 Model trả mảng bàn cờ (BoardState) mới đã cập nhật xong xuôi về cho Controller.
+  // 4.5 Model trả mảng bàn cờ (BoardState) mới đã cập nhật xong xuôi về cho Controller.
   return newState;
 }

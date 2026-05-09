@@ -42,10 +42,10 @@ export function useGameState() {
       // =========================================================================
       // [UC-4: Thực thi luật bắt quân]
       // =========================================================================
-      // 1.0 Controller gửi yêu cầu thực thi nước đi (kèm move) sang Model (gameEngine)
+      // 4.1 Controller gửi yêu cầu thực thi nước đi (kèm move) sang Model (gameEngine)
       const newState = executeMove(move, boardState);
 
-      // 6.0 Controller cập nhật State nội bộ, kích hoạt View re-render lại giao diện
+      // 4.6 Controller cập nhật State nội bộ, kích hoạt View re-render lại giao diện
       setBoardState(newState);
       setSelectedPiece(null);
     },
