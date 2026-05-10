@@ -65,6 +65,9 @@ export function initializeBoard(): BoardState {
 
 // =========================================================================
 // [UC-3: Xác thực tính hợp lệ của nước đi]
+/**
+ * Hỗ trợ logic xác thực cho Bước 3.2 và kiểm tra nước đi kế tiếp ở Bước 3.4.2.
+ */
 // =========================================================================
 function isValidPosition(x: number, y: number, pieces: Piece[]): boolean {
   if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) {
@@ -75,6 +78,9 @@ function isValidPosition(x: number, y: number, pieces: Piece[]): boolean {
 
 // =========================================================================
 // [UC-3: Xác thực tính hợp lệ của nước đi]
+/**
+ * Bước 3.4.2: Lấy danh sách các ô kề cận hợp lệ để di chuyển.
+ */
 // Gắn với UC-2.4 (View/Controller gọi Model để lấy valid moves)
 // =========================================================================
 export function getValidMoves(
@@ -108,6 +114,9 @@ export function getValidMoves(
       validMoves.push({ x: newX, y: newY });
     }
   }
+  /**
+ * Bước 3.3.1: Xử lý Gánh (Luật ăn quân cơ bản của UC-4).
+ */
    // UC-2.5: trả danh sách về View
   return validMoves;
 }
@@ -164,6 +173,9 @@ function processGanh(
 // [UC-4: Thực thi luật bắt quân] (GIAI ĐOẠN 2)
 // Chức năng chờ: Dummy Function thiết lập khung gốc cho "Luật Chẹt"
 // =========================================================================
+/**
+ * Bước 3.3.2: Dự phòng Xử lý Chẹt/Vây (Phase 2).
+ */
 function processChat(
   movedPieceId: string,
   newX: number,
@@ -192,16 +204,24 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
     winner: state.winner,
     message: state.message,
   };
-
+  // Bước 3.2: Kiểm tra tính hợp lệ (Validation)
+  // Bước 3.2.1: Kiểm tra sự tồn tại của quân cờ dựa trên pieceId
   const piece = newState.pieces.find((p) => p.id === move.pieceId);
+
+   // Bước 3.2.1a: Alternate Flow - Quân cờ không hợp lệ
+  // 3.2.1a.1: Trả về trạng thái hiện tại không thay đổi
   if (!piece) return state;
 
   // =========================================================================
   // [UC-4: Thực thi luật bắt quân]
   // =========================================================================
+   // Bước 3.2.2: Cập nhật tọa độ mới vào newState
   // 4.2 Model tiến hành cập nhật tọa độ mới cho quân cờ vừa đi trên mảng dữ liệu ảo.
   piece.x = move.toX;
   piece.y = move.toY;
+
+  // Bước 3.3: Thực thi luật bắt quân (UC-4)
+  // Bước 3.3.1: Gọi hàm xử lý Gánh để cập nhật thuộc tính owner
 
   // 4.3 Model bắt đầu thực thi thuật toán quét bắt quân (Luật Gánh & Chầu).
   const ganhCaptured = processGanh(
@@ -216,6 +236,11 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
     const capturedPiece = newState.pieces.find((p) => p.id === id);
     if (capturedPiece) capturedPiece.owner = newState.currentPlayer;
   }
+
+   // Bước 3.3.2: Dự phòng xử lý Chẹt/Vây (Mở rộng cho Phase 2)
+
+  // Bước 3.4: Hoàn tất lượt đi và Chuyển đổi trạng thái
+  // Bước 3.4.1: Kiểm tra điều kiện thắng (Nếu đạt 16 quân)
 
   // =========================================================================
   // [UC-5: Theo dõi diễn biến và và Xử lý kết quả]
@@ -234,6 +259,7 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
     newState.message =
       "Người chơi 2 chiến thắng! Đã ăn toàn bộ quân đối phương.";
   } else {
+    // Bước 3.4.2: Đổi lượt đi (Đảo ngược currentPlayer)
     newState.currentPlayer =
       newState.currentPlayer === "player1" ? "player2" : "player1";
 
@@ -243,7 +269,7 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
     const hasValidMoves = nextPlayerPieces.some(
       (p) => getValidMoves(p.id, newState).length > 0,
     );
-
+    // Bước 3.4.2a: Alternate Flow - Người chơi kế tiếp hết nước đi
     if (nextPlayerPieces.length === 0 || !hasValidMoves) {
       newState.gameOver = true;
       newState.winner =
@@ -254,6 +280,7 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
         newState.winner === "player1" ? "Người chơi 1" : "Người chơi 2";
       newState.message = `${loserName} hết nước đi. ${winnerName} chiến thắng!`;
     } else {
+      // Bước 3.4.3: Cập nhật thông điệp tương ứng (Ví dụ: "Đến lượt Người chơi 2")
       const playerName =
         newState.currentPlayer === "player1" ? "Người chơi 1" : "Người chơi 2";
       newState.message = `Đến lượt ${playerName}`;
