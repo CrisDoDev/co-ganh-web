@@ -1,11 +1,68 @@
-﻿import Link from 'next/link';
+﻿"use client";
 
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+// =========================================================================
+// [UC-1: Khởi động và Thiết lập ván cờ] - Đảm nhận: Phúc
+// Chức năng: Màn hình Landing Page giới thiệu luật chơi và nút Chơi Ngay
+// =========================================================================
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-8 space-y-6">
-      <h1 className="text-4xl font-bold">Co Ganh - Trang Chu (Trong)</h1>
-      <p className="text-lg">Trang chu Landing Page - Giao dien cho thiet ke</p>
-      <Link href="/game" className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium">Vao Ban Co</Link>
+    <main className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full text-center space-y-8">
+        {/* Header */}
+        <div className="space-y-4">
+          <h1 className="text-6xl md:text-7xl font-serif font-bold text-primary">
+            Cờ Gánh
+          </h1>
+          <p className="text-xl md:text-2xl text-muted-foreground font-light">
+            Trò chơi cờ truyền thống Việt Nam
+          </p>
+        </div>
+
+        {/* Description */}
+        <div className="space-y-4 bg-card rounded-lg p-8 shadow-lg border border-border">
+          <p className="text-lg text-foreground leading-relaxed">
+            Cờ Gánh là một trò chơi cờ truyền thống của người Việt, được chơi
+            trên bàn cờ 5x5 ô vuông. Trò chơi này đòi hỏi sự tính toán chiến
+            lược cao và là biểu tượng của trí tuệ Việt.
+          </p>
+
+          <div className="pt-4 space-y-3 text-sm text-muted-foreground">
+            <p className="font-semibold text-primary">Cách chơi:</p>
+            <ul className="space-y-2 text-left">
+              <li className="flex items-start gap-3">
+                <span className="text-accent font-bold">1.</span>
+                <span>Hai người chơi lần lượt di chuyển quân cờ của mình</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-accent font-bold">2.</span>
+                <span>
+                  Tấn công và bắt quân đối phương để giành chiến thắng
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-accent font-bold">3.</span>
+                <span>
+                  Người chơi đầu tiên bắt được tất cả quân đối phương sẽ thắng
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* CTA Button */}
+        <div className="pt-8">
+          <Link href="/game">
+            <Button
+              size="lg"
+              className="px-12 py-7 text-xl bg-primary hover:bg-primary/90 text-primary-foreground font-serif font-semibold shadow-lg hover:shadow-xl transition-all"
+            >
+              Chơi Ngay
+            </Button>
+          </Link>
+        </div>
+      </div>
     </main>
   );
 }
