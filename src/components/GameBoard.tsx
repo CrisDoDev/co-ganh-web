@@ -1,19 +1,33 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState } from 'react'
 import { getValidMoves, type BoardState } from '@/lib/gameEngine'
 
 interface GameBoardProps {
   boardState: BoardState
+   // [UC-5][5.5] View nhận dữ liệu để hiển thị trạng thái bàn cờ hiện tại
   selectedPiece: string | null
+
+  // [UC-5][5.1] Người chơi thực hiện hành động: chọn quân cờ
   onPieceSelect: (pieceId: string) => void
+
+  // [UC-5][5.1] Người chơi thực hiện nước đi hợp lệ 
+  // (Hàm này sẽ gọi lên Controller để kích hoạt tiếp bước 5.2, 5.3, 5.4)
   onMove: (toX: number, toY: number) => void
   gameOver: boolean
+  // [UC-5][5.5] Các nước đi hợp lệ để hiển thị cho người chơi
 }
 
 const BOARD_SIZE = 5
 
 export default function GameBoard({ 
+
+
+  // Lưu ý: Các bước 5.2 (Controller gửi trạng thái), 5.3 (Cập nhật lịch sử), 
+  // và 5.4 (Kiểm tra thắng/thua) không nằm ở đây mà được xử lý ở Hook và Engine.
+  // View (GameBoard) chỉ nhận kết quả đã xử lý thông qua prop `state`.
+  // [UC-5][5.5] View hiển thị lại giao diện bàn cờ và diễn biến trận đấu
+
   boardState, 
   selectedPiece, 
   onPieceSelect, 
