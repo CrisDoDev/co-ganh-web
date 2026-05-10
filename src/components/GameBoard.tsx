@@ -1,22 +1,45 @@
-﻿"use client";
-import { getValidMoves, type BoardState } from "@/lib/gameEngine";
-import { useEffect, useState } from 'react'
+'use client'
 
+import { useEffect, useState } from 'react'
+import { getValidMoves, type BoardState } from '@/lib/gameEngine'
 
 interface GameBoardProps {
-  boardState: BoardState;
-  selectedPiece: string | null;
-  onPieceSelect: (id: string) => void;
-  onMove: (x: number, y: number) => void;
-  gameOver: boolean
+  boardState: BoardState
+   // [UC-5][5.5] View nhận dữ liệu để hiển thị trạng thái bàn cờ hiện tại
+  selectedPiece: string | null
 
+  // [UC-5][5.1] Người chơi thực hiện hành động: chọn quân cờ
+  onPieceSelect: (pieceId: string) => void
+
+  // [UC-5][5.1] Người chơi thực hiện nước đi hợp lệ 
+  // (Hàm này sẽ gọi lên Controller để kích hoạt tiếp bước 5.2, 5.3, 5.4)
+  onMove: (toX: number, toY: number) => void
+  gameOver: boolean
+  // [UC-5][5.5] Các nước đi hợp lệ để hiển thị cho người chơi
 }
 
 const BOARD_SIZE = 5
 
-export default function GameBoard({ boardState, selectedPiece, gameOver, onPieceSelect, onMove }: GameBoardProps) {
+export default function GameBoard({ 
+
+
+  // Lưu ý: Các bước 5.2 (Controller gửi trạng thái), 5.3 (Cập nhật lịch sử), 
+  // và 5.4 (Kiểm tra thắng/thua) không nằm ở đây mà được xử lý ở Hook và Engine.
+  // View (GameBoard) chỉ nhận kết quả đã xử lý thông qua prop `state`.
+  // [UC-5][5.5] View hiển thị lại giao diện bàn cờ và diễn biến trận đấu
+
+  boardState, 
+  selectedPiece, 
+  onPieceSelect, 
+  onMove,
+  gameOver 
+}: GameBoardProps) {
   const [validMoves, setValidMoves] = useState<Array<{x: number; y: number}>>([])
 
+  // =========================================================================
+  // UC-2.4: Controller/Model tính toán danh sách nước đi hợp lệ
+  // UC-2.5: View nhận dữ liệu và cập nhật state hiển thị
+  // =========================================================================
   useEffect(() => {
     if (selectedPiece) {
       const moves = getValidMoves(selectedPiece, boardState)
@@ -30,8 +53,41 @@ export default function GameBoard({ boardState, selectedPiece, gameOver, onPiece
     return boardState.pieces.find(p => p.x === x && p.y === y)
   }
 
+  // =========================================================================
+  // [UC-2: Tương tác di chuyển quân cờ] - View Layer
+  // Chức năng: bắt toàn bộ click trên bàn cờ (select + move)
+  // =========================================================================
   const handleSquareClick = (x: number, y: number) => {
-   
+
+    // UC-2.1: Người chơi click vào một ô trên bàn cờ
+    // UC-2.2: View gửi event sang Controller thông qua onPieceSelect / onMove
+
+    if (gameOver) return
+
+    const clickedPiece = getPieceAt(x, y)
+
+    // =========================
+    // UC-2.1 (CASE): chọn quân cờ của mình
+    // =========================
+    if (clickedPiece && clickedPiece.owner === boardState.currentPlayer) {
+      onPieceSelect(clickedPiece.id)
+      return
+    }
+
+    // =========================
+    // UC-2.7: click vào ô hợp lệ để di chuyển
+    // =========================
+    if (selectedPiece && validMoves.some(m => m.x === x && m.y === y)) {
+      onMove(x, y)
+      return
+    }
+
+    // =========================
+    // UC-2.b ALT FLOW: click ngoài → deselect
+    // =========================
+    if (!clickedPiece) {
+      onPieceSelect('')
+    }
   }
 
   return (
@@ -42,6 +98,7 @@ export default function GameBoard({ boardState, selectedPiece, gameOver, onPiece
             Array.from({ length: BOARD_SIZE }).map((_, x) => {
               const piece = getPieceAt(x, y)
               const isValid = validMoves.some(m => m.x === x && m.y === y)
+
               const isSelected = selectedPiece && boardState.pieces.find(p => p.id === selectedPiece)?.x === x && boardState.pieces.find(p => p.id === selectedPiece)?.y === y
 
               return (
@@ -54,19 +111,19 @@ export default function GameBoard({ boardState, selectedPiece, gameOver, onPiece
                     ${(x + y) % 2 === 0 ? 'bg-muted' : 'bg-background'}
                     hover:bg-opacity-80 cursor-pointer
                     relative
-                    ${/* [UC-2] Nam: Highlight khung viền khi chọn quân cờ */ ''}
+                    ${/* UC-2.6.1: highlight quân cờ đang được chọn */ ''}
                     ${isSelected ? 'ring-4 ring-accent' : ''}
                     ${gameOver ? 'cursor-not-allowed' : ''}
                   `}
                 >
-                  {/* [UC-2] Nam: Render dấu chấm gợi ý nước đi */}
+                  {/* UC-2.6.2: hiển thị gợi ý nước đi hợp lệ */}
                   {isValid && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-3 h-3 bg-accent rounded-full"></div>
                     </div>
                   )}
 
-                  {/* [UC-2] Nam: Render biểu tượng quân cờ. Chuẩn bị cho Animation GĐ2 */}
+                  {/* UC-2.6.1: render quân cờ */}
                   {piece && (
                     <div
                       className={`
@@ -89,5 +146,5 @@ export default function GameBoard({ boardState, selectedPiece, gameOver, onPiece
         </div>
       </div>
     </div>
-  );
+  )
 }
