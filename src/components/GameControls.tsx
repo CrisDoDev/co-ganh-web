@@ -1,20 +1,32 @@
 ﻿"use client";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface GameControlsProps {
   onRestart: () => void;
   onUndo: () => void;
+  gameOver: boolean;
 }
 
-export default function GameControls({ onRestart, onUndo }: GameControlsProps) {
+export default function GameControls({ onRestart, onUndo, gameOver }: GameControlsProps) {
   return (
-    <div className="p-6 bg-white border rounded shadow-sm flex flex-col items-center space-y-4">
-      <p className="font-semibold text-gray-700 text-center">GameControls Component</p>
-      <button 
-        onClick={onRestart} 
-        className="px-6 py-2 bg-slate-800 text-white rounded w-full"
-      >
-        Làm mới ván cờ
-      </button>
+    <div className="flex flex-col gap-4">
+      <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
+        <div className="flex flex-wrap gap-3 justify-center">
+          <Button
+            onClick={onRestart}
+            variant="outline" 
+            className="px-6 py-2 border-border hover:bg-muted font-serif"
+          >
+            Chơi lại ván mới
+          </Button>
+        </div>
+      </div>
+      <div className="bg-secondary/10 border border-secondary rounded-lg p-4">
+        <p className="text-sm text-muted-foreground text-center font-serif">
+          Chọn một quân cờ, sau đó nhấn vào ô trống để di chuyển
+        </p>
+      </div>
     </div>
   );
 }
