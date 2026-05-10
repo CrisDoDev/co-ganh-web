@@ -1,4 +1,4 @@
-﻿export type Player = "player1" | "player2";
+export type Player = "player1" | "player2";
 export type PieceColor = "player1" | "player2";
 
 export interface Piece {
@@ -75,12 +75,15 @@ function isValidPosition(x: number, y: number, pieces: Piece[]): boolean {
 
 // =========================================================================
 // [UC-3: Xác thực tính hợp lệ của nước đi]
+// Gắn với UC-2.4 (View/Controller gọi Model để lấy valid moves)
 // =========================================================================
 export function getValidMoves(
   pieceId: string,
   state: BoardState,
 ): Array<{ x: number; y: number }> {
+  // UC-2.4: Model nhận request từ Controller để tính nước đi
   const piece = state.pieces.find((p) => p.id === pieceId);
+  // UC-2.a ALT: quân không hợp lệ hoặc sai lượt
   if (!piece || piece.owner !== state.currentPlayer) {
     return [];
   }
@@ -105,6 +108,7 @@ export function getValidMoves(
       validMoves.push({ x: newX, y: newY });
     }
   }
+   // UC-2.5: trả danh sách về View
   return validMoves;
 }
 
