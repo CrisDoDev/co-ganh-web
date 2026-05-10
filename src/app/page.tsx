@@ -1,10 +1,16 @@
 ﻿"use client";
-import Link from 'next/link';
+
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+// =========================================================================
+// [UC-1: Khởi động và Thiết lập ván cờ] - Đảm nhận: Phúc
+// Chức năng: Màn hình Landing Page giới thiệu luật chơi và nút Chơi Ngay
+// =========================================================================
 export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       <div className="max-w-2xl w-full text-center space-y-8">
+        {/* Header */}
         <div className="space-y-4">
           <h1 className="text-6xl md:text-7xl font-serif font-bold text-primary">
             Cờ Gánh
@@ -14,6 +20,7 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Description */}
         <div className="space-y-4 bg-card rounded-lg p-8 shadow-lg border border-border">
           <p className="text-lg text-foreground leading-relaxed">
             Cờ Gánh là một trò chơi cờ truyền thống của người Việt, được chơi
@@ -44,6 +51,7 @@ export default function Home() {
           </div>
         </div>
 
+        {/* CTA Button */}
         <div className="pt-8">
           <Link href="/game">
             <Button
