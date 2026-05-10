@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Business Requirements Document (BRD)
 
-## Getting Started
+## Dự án: Web Game Cờ Gánh (Local Multiplayer)
 
-First, run the development server:
+### 1. Giới thiệu (Introduction)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Project Name:** Web Game Cờ Gánh (Local Multiplayer).
+- **Background:** Cờ Gánh là một trò chơi board game dân gian đầy tính trí tuệ của Việt Nam. Tuy nhiên, việc tìm kiếm một nền tảng trực tuyến mượt mà, giao diện đẹp và thuật toán chuẩn xác để chơi bộ môn này hiện nay rất hạn chế. Dự án này ra đời nhằm số hóa và bảo tồn trò chơi dân gian trên nền tảng Web hiện đại.
+- **Problem Statement:** Người dùng thiếu một nền tảng chơi Cờ Gánh đơn giản, dễ tiếp cận trên trình duyệt, không cần tải app phức tạp, đồng thời phải đảm bảo tính chính xác tuyệt đối của các luật chơi (Gánh, Vây, Chẹt).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Mục tiêu (Objectives)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Tạo ra một nền tảng Web Game Cờ Gánh giải trí với độ trễ thấp, giao diện trực quan.
+- Đạt được sự hoàn hảo về **"Core Logic"** (Luật cờ) cho phiên bản chơi Local 2 người (2 người chơi trên cùng 1 máy).
+- Xây dựng kiến trúc phần mềm chuẩn **MVC** làm nền tảng vững chắc để dễ dàng bảo trì và đáp ứng các yêu cầu nâng cấp tính năng.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Phạm vi dự án (Scope)
 
-## Learn More
+#### **In Scope (Trong phạm vi):**
 
-To learn more about Next.js, take a look at the following resources:
+- Triển khai lưới bàn cờ tiêu chuẩn, tích hợp thuật toán ma trận để quản lý tọa độ.
+- Hỗ trợ chơi **Local Multiplayer** (2 người chơi luân phiên trên cùng 1 thiết bị).
+- Xử lý 100% các luật bắt quân cốt lõi: **Gánh, Chầu (4, 6), Vây, Chẹt**.
+- Ứng dụng Framework **Next.js 16** và **TypeScript** để kiểm soát chặt chẽ kiểu dữ liệu.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### **Out of Scope (Ngoài phạm vi):**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Chơi với máy (AI Bot).
+- Hệ thống đấu giải (Tournament system).
+- Kết nối Online (Multiplayer qua mạng) và lưu trữ hệ thống cơ sở dữ liệu trên máy chủ (Database).
 
-## Deploy on Vercel
+### 4. Các bên liên quan (Stakeholders)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Vai trò              | Thành phần                                       |
+| :------------------- | :----------------------------------------------- |
+| **Product Owner**    | Khách hàng đại diện (AI Delegate)                |
+| **Development Team** | Phước (Lead), Long, Phúc, Nam, Chí               |
+| **Users**            | Người chơi yêu thích board game truyền thống     |
+| **QA/QC**            | Đội ngũ kiểm thử sản phẩm trên môi trường Vercel |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 5. Yêu cầu nghiệp vụ (Business Requirements)
+
+- **BR-01:** Hệ thống phải cung cấp môi trường chơi cờ dạng Turn-based (đánh theo lượt) hoạt động ổn định trên các trình duyệt web hiện đại (Chrome, Edge, Safari).
+- **BR-02:** Hệ thống thuật toán lõi (Core Logic) phải được viết hoàn toàn bằng **TypeScript** để giảm thiểu rủi ro lỗi thời gian chạy (runtime errors) khi xử lý mảng ma trận đa chiều.
+- **BR-03:** Giao diện người dùng phải được thiết kế dạng **Responsive**, linh hoạt trên cả PC và Mobile, tận dụng sức mạnh của Tailwind CSS.
+- **BR-04:** Mã nguồn phải được thiết kế theo mô hình kiến trúc **MVC**, tách biệt rõ ràng giữa Giao diện (View) và Logic thuật toán (Model/Controller).
+
+### 6. Tiêu chí thành công (Success Metrics)
+
+- **Performance:** Tốc độ load trang ban đầu (First Contentful Paint) < 1.5 giây trên môi trường deploy Vercel.
+- **Algorithm Speed:** Thuật toán xử lý BFS (Tìm vùng bị vây) chạy dưới 100ms mỗi nước đi.
+- **Quality:** Pass 100% các Manual Testcases về luồng bắt quân trước khi Demo.
+
+### 7. Ràng buộc & Công nghệ (Constraints & Technology Stack)
+
+- **Framework chính:** Next.js 16.
+- **Ngôn ngữ:** TypeScript.
+- **Môi trường Dev:** Node.js 22.22.2 LTS.
+- **Công cụ:** Visual Studio Code.
+- **Deploy:** Vercel (CI/CD qua GitHub).
+- **Thời gian:** Hoàn thành bản MVP theo đúng tiến độ môn học.
+
+### 8. Tiêu chí nghiệm thu (Acceptance Criteria)
+
+- Người dùng có thể bắt đầu, thao tác và hoàn thành một ván cờ từ đầu đến cuối mà không gặp lỗi crash hệ thống.
+- Mọi luật lệ của Cờ gánh (Gánh, Vây) hoạt động chính xác theo đặc tả.
+- Có đầy đủ tài liệu hướng dẫn cài đặt môi trường.
