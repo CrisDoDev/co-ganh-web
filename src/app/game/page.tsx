@@ -125,11 +125,7 @@ export default function GamePage() {
         </div>
       </div>
 
-      {/* =========================================================================
-        [UC-5: Theo dõi diễn biến và kết thúc ván cờ] - Đảm nhận: Chí
-        Chức năng: View - Hiển thị Popup (Dialog) thông báo kết quả Game Over.
-        Đại diện chốt hạ cho luồng MVC: Model (kiểm tra GameOver) -> View (Mở Popup).
-        ========================================================================= */}
+      {}
       <AlertDialog open={boardState.gameOver}>
         <AlertDialogContent>
           <AlertDialogHeader>
