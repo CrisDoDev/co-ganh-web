@@ -10,5 +10,8 @@ export const BoardTopology = {
   isValidPosition: (x: number, y: number): boolean => {
     return x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE;
   },
-
+ // Check xem ô này có đường chéo không ( x+y chẵn thì mới có)
+  canMoveDiagonal: (x: number, y: number): boolean => {
+    return (x + y) % 2 === 0;
+  },
 };
