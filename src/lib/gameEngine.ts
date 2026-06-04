@@ -8,6 +8,9 @@ export interface Piece {
   owner: PieceColor;
 }
 
+// State Pattern: Định nghĩa các trạng thái vòng đời của ván cờ
+export type GamePhase = "playing" | "game_over" | "draw";
+
 export interface BoardState {
   pieces: Piece[];
   currentPlayer: Player;
@@ -15,7 +18,8 @@ export interface BoardState {
   gameOver: boolean;
   winner: Player | null;
   message: string;
-  movesWithoutCapture: number; // Cập nhật: Theo dõi số lượt đi liên tiếp không có quân bị bắt
+  movesWithoutCapture: number;
+  phase: GamePhase; // Thuộc tính cốt lõi của State Pattern quản lý hành vi game
 }
 
 export interface GameMove {
@@ -28,11 +32,9 @@ export interface GameMove {
 
 export const BOARD_SIZE = 5;
 export const TOTAL_PIECES = 16;
-export const MAX_DRAW_MOVES = 50; // Hạn mức nước đi tối đa để xử hòa
+export const MAX_DRAW_MOVES = 50;
 
-// =========================================================================
-// [UC-1: Khởi động và Thiết lập ván cờ]
-// =========================================================================
+// Khởi tạo dữ liệu ván cờ mới
 export function initializeBoard(): BoardState {
   const pieces: Piece[] = [];
   let id = 0;
@@ -62,13 +64,11 @@ export function initializeBoard(): BoardState {
     gameOver: false,
     winner: null,
     message: "Đến lượt Người chơi 1",
-    movesWithoutCapture: 0, // Khởi tạo bộ đếm lượt hòa bằng 0 cho ván đấu mới
+    movesWithoutCapture: 0,
+    phase: "playing", // Trạng thái ban đầu: Đang chơi
   };
 }
 
-// =========================================================================
-// [UC-3: Xác thực tính hợp lệ của nước đi]
-// =========================================================================
 function isValidPosition(x: number, y: number, pieces: Piece[]): boolean {
   if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) {
     return false;
@@ -108,9 +108,6 @@ export function getValidMoves(
   return validMoves;
 }
 
-// =========================================================================
-// [UC-4: Thực thi luật bắt quân]
-// =========================================================================
 function processGanh(
   movedPieceId: string,
   newX: number,
@@ -151,21 +148,9 @@ function processGanh(
   return capturedIds;
 }
 
-function processChat(
-  movedPieceId: string,
-  newX: number,
-  newY: number,
-  pieces: Piece[],
-): string[] {
-  return [];
-}
-
-function processSurrounding(pieces: Piece[]): string[] {
-  return [];
-}
-
 export function executeMove(move: GameMove, state: BoardState): BoardState {
-  if (state.gameOver) return state;
+  // Ngăn chặn tương tác nếu trạng thái hiện tại thuộc các State kết thúc
+  if (state.phase !== "playing") return state;
 
   const newState: BoardState = {
     pieces: state.pieces.map((p) => ({ ...p })),
@@ -174,7 +159,8 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
     gameOver: state.gameOver,
     winner: state.winner,
     message: state.message,
-    movesWithoutCapture: state.movesWithoutCapture, // Nhận trạng thái đếm hiện tại
+    movesWithoutCapture: state.movesWithoutCapture,
+    phase: state.phase,
   };
 
   const piece = newState.pieces.find((p) => p.id === move.pieceId);
@@ -183,7 +169,6 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
   piece.x = move.toX;
   piece.y = move.toY;
 
-  // Thực thi luật bắt quân (Gánh)
   const ganhCaptured = processGanh(
     move.pieceId,
     move.toX,
@@ -196,28 +181,34 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
     if (capturedPiece) capturedPiece.owner = newState.currentPlayer;
   }
 
-  // TÍNH TOÁN ĐẾM LƯỢT HÒA CỦA UC-5
-  // Nếu mảng quân bị ăn lớn hơn 0 nghĩa là có bắt quân -> reset bộ đếm về 0, ngược lại tăng 1 đơn vị
   const isCaptureHappen = ganhCaptured.length > 0;
   newState.movesWithoutCapture = isCaptureHappen
     ? 0
     : state.movesWithoutCapture + 1;
 
-  // Kiểm tra điều kiện kết thúc ván đấu cơ bản
   const p1Count = newState.pieces.filter((p) => p.owner === "player1").length;
   const p2Count = newState.pieces.filter((p) => p.owner === "player2").length;
 
-  if (p1Count === TOTAL_PIECES) {
+  // ===============================
+  // XỬ LÝ CHUYỂN ĐỔI TRẠNG THÁI
+  // ===============================
+
+  // Trường hợp 1: Một người chơi không còn quân cờ nào trên bàn cờ
+  if (p1Count === 0 || p2Count === 0) {
+    newState.phase = "game_over"; // Chuyển sang kết thúc ván
     newState.gameOver = true;
-    newState.winner = "player1";
-    newState.message =
-      "Người chơi 1 chiến thắng! Đã ăn toàn bộ quân đối phương.";
-  } else if (p2Count === TOTAL_PIECES) {
+    newState.winner = p1Count === 0 ? "player2" : "player1";
+    newState.message = `${newState.winner === "player1" ? "Người chơi 1" : "Người chơi 2"} chiến thắng! Đã ăn toàn bộ quân đối phương.`;
+  }
+  // Trường hợp 2: Vượt quá giới hạn 50 nước đi không ăn quân -> Xử Hòa
+  else if (newState.movesWithoutCapture >= MAX_DRAW_MOVES) {
+    newState.phase = "draw"; // Chuyển đổi sang State Hòa
     newState.gameOver = true;
-    newState.winner = "player2";
-    newState.message =
-      "Người chơi 2 chiến thắng! Đã ăn toàn bộ quân đối phương.";
-  } else {
+    newState.winner = null;
+    newState.message = "Hai người chơi HÒA nhau! (Sau 50 lượt không ăn quân).";
+  }
+  // Kịch bản tiếp diễn hoặc check kẹt nước
+  else {
     newState.currentPlayer =
       newState.currentPlayer === "player1" ? "player2" : "player1";
 
@@ -228,7 +219,9 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
       (p) => getValidMoves(p.id, newState).length > 0,
     );
 
+    // Kịch bản 3: Người chơi đến lượt nhưng không còn nước đi hợp lệ (Kẹt nước)
     if (nextPlayerPieces.length === 0 || !hasValidMoves) {
+      newState.phase = "game_over"; // Chuyển sang kết thúc ván
       newState.gameOver = true;
       newState.winner =
         newState.currentPlayer === "player1" ? "player2" : "player1";
@@ -238,6 +231,8 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
         newState.winner === "player1" ? "Người chơi 1" : "Người chơi 2";
       newState.message = `${loserName} hết nước đi. ${winnerName} chiến thắng!`;
     } else {
+      // Ván đấu duy trì State cũ (playing)
+      newState.phase = "playing";
       const playerName =
         newState.currentPlayer === "player1" ? "Người chơi 1" : "Người chơi 2";
       newState.message = `Đến lượt ${playerName}`;
@@ -245,4 +240,15 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
   }
 
   return newState;
+}
+
+export function passTurn(state: BoardState): BoardState {
+  if (state.phase !== "playing") return state;
+  const nextPlayer = state.currentPlayer === "player1" ? "player2" : "player1";
+
+  return {
+    ...state,
+    currentPlayer: nextPlayer,
+    message: `Đến lượt ${nextPlayer === "player1" ? "Người chơi 1" : "Người chơi 2"}`,
+  };
 }
