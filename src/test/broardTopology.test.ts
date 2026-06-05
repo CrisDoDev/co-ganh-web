@@ -20,6 +20,8 @@ describe("UC-3: Kiểm tra tính hợp lệ của tọa độ trên bàn cờ", 
     expect(result).toBe(false);
   });
 // kiểm tra tính hợp lệ của topology đường chéo
+ describe("UC-3: Kiểm tra topology đường chéo của bàn cờ", () => {
+
   test("Ô có tổng tọa độ chẵn phải được phép kết nối đường chéo", () => {
     const result = BoardTopology.canMoveDiagonal(2, 2);
 
@@ -37,5 +39,41 @@ describe("UC-3: Kiểm tra tính hợp lệ của tọa độ trên bàn cờ", 
 
     expect(result).toBe(true);
   });
+
+});
+//kiểm tra sinh danh sách ô lân cận hợp lệ
+describe("UC-3: Kiểm tra sinh danh sách ô lân cận hợp lệ", () => {
+
+  test("Ô trung tâm có topology đường chéo phải sinh ra 8 ô lân cận", () => {
+    const neighbors =
+      BoardTopology.getAvailableNeighbors(2, 2);
+
+    expect(neighbors.length).toBe(8);
+  });
+
+  test("Ô không có topology đường chéo chỉ sinh ra 4 ô lân cận", () => {
+    const neighbors =
+      BoardTopology.getAvailableNeighbors(2, 1);
+
+    expect(neighbors.length).toBe(4);
+  });
+
+  test("Ô góc bàn cờ chỉ sinh ra các ô nằm trong bàn cờ", () => {
+    const neighbors =
+      BoardTopology.getAvailableNeighbors(0, 0);
+
+    expect(neighbors.length).toBe(3);
+
+    neighbors.forEach((cell) => {
+      expect(
+        BoardTopology.isValidPosition(
+          cell.x,
+          cell.y
+        )
+      ).toBe(true);
+    });
+  });
+
+});
 });
 

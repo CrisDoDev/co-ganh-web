@@ -14,4 +14,38 @@ export const BoardTopology = {
   canMoveDiagonal: (x: number, y: number): boolean => {
     return (x + y) % 2 === 0;
   },
+   // Lấy tất cả các ô xung quanh (neighbors) có đường nối hợp lệ
+  getAvailableNeighbors: (x: number, y: number): Position[] => {
+    const neighbors: Position[] = [];
+
+    // Các hướng ngang, dọc (luôn luôn có ở mọi ô)
+    const orthogonalDirs = [
+      { dx: 0, dy: -1 }, // Lên
+      { dx: 0, dy: 1 }, // Xuống
+      { dx: -1, dy: 0 }, // Trái
+      { dx: 1, dy: 0 }, // Phải
+    ];
+
+    // Các hướng chéo (chỉ có ở các ô canMoveDiagonal)
+    const diagonalDirs = [
+      { dx: -1, dy: -1 }, // Lên trái
+      { dx: 1, dy: -1 }, // Lên phải
+      { dx: -1, dy: 1 }, // Xuống trái
+      { dx: 1, dy: 1 }, // Xuống phải
+    ];
+
+    const dirsToUse = BoardTopology.canMoveDiagonal(x, y)
+      ? [...orthogonalDirs, ...diagonalDirs]
+      : orthogonalDirs;
+
+    for (const dir of dirsToUse) {
+      const newX = x + dir.dx;
+      const newY = y + dir.dy;
+      if (BoardTopology.isValidPosition(newX, newY)) {
+        neighbors.push({ x: newX, y: newY });
+      }
+    }
+
+    return neighbors;
+  },
 };
