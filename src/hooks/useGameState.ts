@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   initializeBoard,
   executeMove,
@@ -10,6 +10,13 @@ export function useGameState() {
   const [boardState, setBoardState] = useState<BoardState | null>(null);
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
 
+  // Cập nhật: Quản lý tổng tỷ số trận đấu tích lũy qua nhiều ván cờ
+  const [scores, setScores] = useState({
+    player1: 0,
+    player2: 0,
+    initialized: false, // Cờ hiệu bảo vệ chống trùng lặp dữ liệu re-render
+  });
+
   // =========================================================================
   // [UC-1: Khởi động và Thiết lập ván cờ]
   // =========================================================================
@@ -19,22 +26,37 @@ export function useGameState() {
   }, []);
 
   // =========================================================================
+  // Xử lý vòng đời kết thúc game để cập nhật tỷ số
+  // =========================================================================
+  useEffect(() => {
+    // Nếu trạng thái ván cờ chuyển sang "game_over" và có người thắng, tiến hành cộng điểm
+    if (
+      boardState?.phase === "game_over" &&
+      boardState.winner &&
+      !scores.initialized
+    ) {
+      const winnerKey = boardState.winner as "player1" | "player2";
+      setScores((prev) => ({
+        ...prev,
+        [winnerKey]: prev[winnerKey] + 1, // Tăng điểm số tích lũy cho người thắng
+        initialized: true, // Khóa cờ hiệu để không bị cộng điểm lặp lại ở lượt re-render sau
+      }));
+    }
+    // Khi một ván đấu mới được khởi tạo lại (quay về trạng thái "playing"), mở khóa cờ hiệu điểm số
+    else if (boardState?.phase === "playing" && scores.initialized) {
+      setScores((prev) => ({ ...prev, initialized: false }));
+    }
+  }, [boardState?.phase, boardState?.winner, scores.initialized]);
+
+  // =========================================================================
   // [UC-2: Tương tác di chuyển quân cờ]
   // =========================================================================
   const handlePieceSelect = useCallback((pieceId: string) => {
-    // UC-2.1: Người chơi click vào quân cờ thuộc phe mình
-    // UC-2.2: View gửi event sang Controller (handlePieceSelect)
-
-    // UC-2.3: Controller xử lý logic chọn quân
     setSelectedPiece((prev) => (prev === pieceId ? null : pieceId));
-
-     // UC-2.3.1: Nếu đã chọn thì bỏ chọn (toggle)
-    // UC-2.3.2: Nếu chưa chọn thì set quân đang được chọn
   }, []);
 
   const handleMove = useCallback(
     (toX: number, toY: number) => {
-        // UC-2.7: Người chơi click vào ô đích
       if (!boardState || !selectedPiece) return;
 
       const piece = boardState.pieces.find((p) => p.id === selectedPiece);
@@ -47,21 +69,9 @@ export function useGameState() {
         toX,
         toY,
       };
-       // UC-2.8: Controller gửi request sang Model (executeMove)
 
-      // =========================================================================
-      // [UC-4: Thực thi luật bắt quân]
-      // =========================================================================
-      // 4.1 Controller gửi yêu cầu thực thi nước đi (kèm move) sang Model (gameEngine)
       const newState = executeMove(move, boardState);
-
-      // 4.6 Controller cập nhật State nội bộ, kích hoạt View re-render lại giao diện
-
-      // UC-2.9: Controller nhận state mới từ Model
       setBoardState(newState);
-
-
-    // UC-2.10: Reset trạng thái chọn quân cờ sau khi đi xong
       setSelectedPiece(null);
     },
     [boardState, selectedPiece],
@@ -70,6 +80,7 @@ export function useGameState() {
   return {
     boardState,
     selectedPiece,
+    scores, // Xuất dữ liệu tổng tỷ số ra ngoài cho View sử dụng
     initGame,
     handlePieceSelect,
     handleMove,
