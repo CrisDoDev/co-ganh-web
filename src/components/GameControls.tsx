@@ -10,22 +10,12 @@ interface GameControlsProps {
 
 export default function GameControls({
   onRestart,
-  // [UC-5][5.7] Người chơi thực hiện hành động thoát hoặc làm mới ván đấu
-  // (View truyền sự kiện này lên Controller để xử lý)
   gameOver,
 }: GameControlsProps) {
-  //
-  // Lưu ý: Component này là View. Các logic như [UC-5][5.2] (Controller nhận
-  // hành động và xử lý logic) sẽ được thực hiện ở Hook (useGameState)
-  // thay vì nằm trong thân hàm render này.
-  // [UC-5][5.5] View hiển thị giao diện điều khiển ván đấu
-  // [UC-5][5.7] Nút để người chơi chọn thoát / làm mới ván đấu
-  //  Nút hoàn tác (undo) nước đi
   return (
     <div className="flex flex-col gap-4">
       <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
         <div className="flex flex-wrap gap-3 justify-center">
-          {/* [UC-1] Thiết lập ván cờ (Phúc): Nút Restart gọi hàm initGame */}
           <Button
             onClick={onRestart}
             variant="outline"

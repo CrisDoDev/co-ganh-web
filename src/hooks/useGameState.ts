@@ -11,7 +11,7 @@ export function useGameState() {
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
 
   // =========================================================================
-  // [UC-1: Khởi động và Thiết lập ván cờ]
+  // [UC-1: Khởi tạo và thiết lập ván cờ]
   // =========================================================================
   const initGame = useCallback(() => {
     setBoardState(initializeBoard());
@@ -19,27 +19,20 @@ export function useGameState() {
   }, []);
 
   // =========================================================================
-  // [UC-2: Tương tác di chuyển quân cờ]
+  // [UC-2: Di chuyển quân cờ]
   // =========================================================================
   const handlePieceSelect = useCallback((pieceId: string) => {
-    // UC-2.1: Người chơi click vào quân cờ thuộc phe mình
-    // UC-2.2: View gửi event sang Controller (handlePieceSelect)
-
-    // UC-2.3: Controller xử lý logic chọn quân
     setSelectedPiece((prev) => (prev === pieceId ? null : pieceId));
-
-     // UC-2.3.1: Nếu đã chọn thì bỏ chọn (toggle)
-    // UC-2.3.2: Nếu chưa chọn thì set quân đang được chọn
   }, []);
 
   const handleMove = useCallback(
     (toX: number, toY: number) => {
-        // UC-2.7: Người chơi click vào ô đích
       if (!boardState || !selectedPiece) return;
 
       const piece = boardState.pieces.find((p) => p.id === selectedPiece);
       if (!piece) return;
 
+      // 4.1.0 Hệ thống kết thúc UC-3 thành công.
       const move: GameMove = {
         pieceId: selectedPiece,
         fromX: piece.x,
@@ -47,21 +40,15 @@ export function useGameState() {
         toX,
         toY,
       };
-       // UC-2.8: Controller gửi request sang Model (executeMove)
 
       // =========================================================================
       // [UC-4: Thực thi luật bắt quân]
       // =========================================================================
-      // 4.1 Controller gửi yêu cầu thực thi nước đi (kèm move) sang Model (gameEngine)
+      // 4.1.1 Controller (useGameState) gửi yêu cầu thực thi nước đi sang Model (gameEngine).
       const newState = executeMove(move, boardState);
 
-      // 4.6 Controller cập nhật State nội bộ, kích hoạt View re-render lại giao diện
-
-      // UC-2.9: Controller nhận state mới từ Model
+      // 4.1.9 Controller cập nhật State nội bộ và kích hoạt View re-render giao diện bàn cờ.
       setBoardState(newState);
-
-
-    // UC-2.10: Reset trạng thái chọn quân cờ sau khi đi xong
       setSelectedPiece(null);
     },
     [boardState, selectedPiece],
