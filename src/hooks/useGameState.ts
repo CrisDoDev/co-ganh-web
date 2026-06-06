@@ -16,22 +16,24 @@ export function useGameState() {
   }, []);
 
   // =========================================================================
-  // [UC-2: Tương tác di chuyển quân cờ]
+  // [UC-2: Tương tác di chuyển quân cờ] - PHÁT TRIỂN TIẾP GIAI ĐOẠN 2
   // =========================================================================
   const handlePieceSelect = useCallback((pieceId: string) => {
-    // UC-2.1: Người chơi click vào quân cờ thuộc phe mình
-    // UC-2.2: View gửi event sang Controller (handlePieceSelect)
-
-    // UC-2.3: Controller xử lý logic chọn quân
+    // 2.2 View gửi sự kiện chọn quân cờ sang Controller.
+    // 2.3 Controller kiểm tra tính hợp lệ của quân cờ được chọn.
+    
+    // 2.3.1 Nếu quân cờ thuộc lượt hiện tại, Controller cập nhật trạng thái “đang được chọn”.
+    // 2.3.a.1 Controller từ chối yêu cầu chọn quân (Bỏ chọn set null nếu click lại quân cũ).
+    // 2.7.b.1 Hệ thống hủy trạng thái chọn quân cờ cũ.
+    // 2.7.b.2 Hệ thống thực hiện lại quy trình từ bước 2.2 với quân cờ mới.
     setSelectedPiece((prev) => (prev === pieceId ? null : pieceId));
-
-     // UC-2.3.1: Nếu đã chọn thì bỏ chọn (toggle)
-    // UC-2.3.2: Nếu chưa chọn thì set quân đang được chọn
   }, []);
 
   const handleMove = useCallback(
     (toX: number, toY: number) => {
-        // UC-2.7: Người chơi click vào ô đích
+      // 2.8 View gửi yêu cầu thực hiện nước đi sang Controller.
+      
+      // 2.7.a.1 Controller từ chối thực hiện nước đi (chặn lỗi nếu state rỗng).
       if (!boardState || !selectedPiece) return;
 
       const piece = boardState.pieces.find((p) => p.id === selectedPiece);
@@ -44,15 +46,15 @@ export function useGameState() {
         toX,
         toY,
       };
-       // UC-2.8: Controller gửi request sang Model (executeMove)
+       // 2.9 Controller cập nhật dữ liệu bàn cờ với vị trí mới của quân cờ.
 
       const newState = executeMove(move, boardState);
-
-      // UC-2.9: Controller nhận state mới từ Model
       setBoardState(newState);
 
 
-    // UC-2.10: Reset trạng thái chọn quân cờ sau khi đi xong
+      // 2.10 View cập nhật giao diện bàn cờ (thông qua React State triggers re-render).
+      // 2.10.1 Xóa trạng thái làm nổi bật quân cờ cũ.
+      // 2.10.2 Xóa toàn bộ dấu chấm gợi ý.
       setSelectedPiece(null);
     },
     [boardState, selectedPiece],
