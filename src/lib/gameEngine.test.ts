@@ -14,10 +14,10 @@ function testInitializeBoardUC1() {
   }
 
   // 2. Kiểm tra cấu hình nâng cấp thời gian (UC-1 của Chí)
-  console.log(`Kiểm tra cấu hình thời gian lượt đi: ${state.turnTimeoutSeconds}s`);
-  console.log(`Kiểm tra trạng thái bộ đếm giờ: ${state.isTimerActive}`);
+  console.log(`Kiểm tra cấu hình thời gian lượt đi: ${state.turnTimeLeft}s`);
+  console.log(`Kiểm tra trạng thái cờ hết giờ: ${state.isTimeOut}`);
   
-  if (state.turnTimeoutSeconds !== 30 || state.isTimerActive !== true) {
+  if (state.turnTimeLeft !== 30 || state.isTimeOut !== false) {
     console.error("❌ LỖI: Cấu hình nâng cấp UC-1 hoạt động sai!");
     return false;
   }
