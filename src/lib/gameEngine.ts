@@ -60,26 +60,33 @@ export function initializeBoard(): BoardState {
   };
 }
 
+// [UC-2: Di chuyển quân cờ] - PHÁT TRIỂN TIẾP GIAI ĐOẠN 2
 function isValidPosition(x: number, y: number, pieces: Piece[]): boolean {
+  // 2.4.1 Model kiểm tra từng ô có nằm trong phạm vi bàn cờ hay không.
   if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) {
     return false;
   }
+  // 2.4.2 Model kiểm tra ô đó có đang trống và hợp lệ để di chuyển hay không.
   return !pieces.some((p) => p.x === x && p.y === y);
 }
 
+
+// 2.4 Model quét các ô lân cận theo luật di chuyển của cờ Gánh.
 export function getValidMoves(
   pieceId: string,
   state: BoardState,
 ): Array<{ x: number; y: number }> {
-  // UC-2.4: Model nhận request từ Controller để tính nước đi
+  
   const piece = state.pieces.find((p) => p.id === pieceId);
-  // UC-2.a ALT: quân không hợp lệ hoặc sai lượt
+  // 2.3.a Luồng chọn quân không hợp lệ: Nếu người chơi click vào quân cờ không thuộc lượt của mình.
   if (!piece || piece.owner !== state.currentPlayer) {
     return [];
   }
 
   const validMoves: Array<{ x: number; y: number }> = [];
-  const directions = [
+  // [PHÁT TRIỂN TIẾP GĐ2]: Luật đi chéo chỉ áp dụng cho các ô có tổng tọa độ chẵn (0,0; 0,2; 1,1...)
+  const isEvenSquare = (piece.x + piece.y) % 2 === 0;
+  const directions = isEvenSquare?[
     { dx: 0, dy: -1 },
     { dx: 0, dy: 1 },
     { dx: -1, dy: 0 },
@@ -88,7 +95,7 @@ export function getValidMoves(
     { dx: 1, dy: -1 },
     { dx: -1, dy: 1 },
     { dx: 1, dy: 1 },
-  ];
+  ]:[{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
 
   for (const dir of directions) {
     const newX = piece.x + dir.dx;
@@ -99,7 +106,7 @@ export function getValidMoves(
     }
   }
 
-   // UC-2.5: trả danh sách về View
+   // 2.4.3 Model trả về danh sách các tọa độ có thể đi.
   return validMoves;
 }
 
