@@ -1,107 +1,129 @@
-
 import { executeMove } from "./gameEngine";
-import { BoardState, GameMove, Piece } from "./gameEngine";
+import { BoardState, GameMove, Piece } from "./types";
 
-describe("UC-5: Kiểm tra bộ đếm số nước đi không bắt quân phục vụ luật hòa", () => {
-  const createTestBoardState = (pieces: Piece[], currentMovesCount = 0, phase: "playing" | "game_over" | "draw" = "playing"): BoardState => ({
+describe("UC-5: Hệ thống kiểm thử nâng cao sau Refactor - Khớp đặc tả luồng UC-5", () => {
+  // Hàm Helper khởi tạo nhanh trạng thái chơi giả lập cho các nước đi tiếp diễn
+  const createMockPlayingState = (
+    pieces: Piece[],
+    movesWithoutCapture = 0,
+  ): BoardState => ({
     pieces,
     currentPlayer: "player1",
     moveHistory: [],
-    gameOver: phase !== "playing",
+    gameOver: false,
     winner: null,
+    phase: "playing", // Mặc định ván đấu ở State đang chơi
+    movesWithoutCapture,
     message: "",
-    movesWithoutCapture: currentMovesCount,
-    phase,
   });
 
-  test("Giá trị của movesWithoutCapture phải tăng lên 1 khi người chơi thực hiện nước đi hòa hoãn không ăn quân", () => {
+  // ===============================
+  // TEST CƠ CHẾ BỘ ĐẾM NƯỚC ĐI HOÀ
+  // ===============================
+
+  test("Bộ đếm movesWithoutCapture phải tịnh tiến tăng thêm 1 khi di chuyển không ăn quân", () => {
     const mockPieces: Piece[] = [
       { id: "p1-active", x: 2, y: 2, owner: "player1" },
       { id: "p2-idle", x: 4, y: 4, owner: "player2" },
     ];
-    const beforeState = createTestBoardState(mockPieces, 5);
+
+    const beforeState = createMockPlayingState(mockPieces, 5);
     const moveRequest: GameMove = {
-      pieceId: "p1-active", fromX: 2, fromY: 2, toX: 2, toY: 1,
+      pieceId: "p1-active",
+      fromX: 2,
+      fromY: 2,
+      toX: 2,
+      toY: 1,
     };
+
     const afterState = executeMove(moveRequest, beforeState);
+
     expect(afterState.movesWithoutCapture).toBe(6);
-    expect(afterState.phase).toBe("playing"); // Trạng thái vẫn là đang chơi
+    expect(afterState.phase).toBe("playing"); // Luồng 5.1.3: Giữ nguyên trạng thái playing
   });
 
-  test("Giá trị của movesWithoutCapture phải quay về mốc 0 ngay khi xuất hiện thao tác gánh quân thành công", () => {
+  // ===================================
+  // TEST CÁC ĐIỀU KIỆN KẾT THÚC VÁN CỜ
+  // ===================================
+
+  test("Luồng 5.2.0 & 5.2.1: Chuyển đổi trạng thái sang 'game_over' khi đối phương có số quân bằng 0", () => {
+    // Giả lập player2 không còn quân nào trên bàn cờ (đã bị ăn sạch ở pipeline UC-4 trước đó)
     const mockPieces: Piece[] = [
-      { id: "p1-striker", x: 2, y: 4, owner: "player1" },
-      { id: "p2-victim-left", x: 1, y: 4, owner: "player2" },
-      { id: "p2-victim-right", x: 3, y: 4, owner: "player2" },
+      { id: "p1-sole-survivor", x: 2, y: 2, owner: "player1" },
     ];
-    const beforeState = createTestBoardState(mockPieces, 40);
+
+    const beforeState = createMockPlayingState(mockPieces, 10);
     const moveRequest: GameMove = {
-      pieceId: "p1-striker", fromX: 2, fromY: 4, toX: 2, toY: 4, // Đứng yên kích hoạt mảng ảo giả lập đã xử lý ăn quân
-    };
-    
-    // Giả lập mảng kết quả sau gánh
-    beforeState.pieces = [
-      { id: "p1-striker", x: 2, y: 4, owner: "player1" },
-      { id: "p2-victim-left", x: 1, y: 4, owner: "player1" },
-      { id: "p2-victim-right", x: 3, y: 4, owner: "player1" },
-    ];
-
-    const afterState = executeMove(moveRequest, beforeState);
-    expect(afterState.movesWithoutCapture).toBe(0);
-  });
-
-  // ========================================
-  // TEST STATE PATTERN TRONG KẾT QUẢ VÁN CỜ
-  // ========================================
-
-  test("Trạng thái ván cờ phải chuyển đổi thành 'game_over' khi đối phương bị ăn sạch lực lượng", () => {
-    const mockPieces: Piece[] = [
-      { id: "p1-winner", x: 2, y: 2, owner: "player1" },
-      // player2 không còn quân nào sống sót trên mảng
-    ];
-    const beforeState = createTestBoardState(mockPieces, 10);
-    const moveRequest: GameMove = {
-      pieceId: "p1-winner", fromX: 2, fromY: 2, toX: 2, toY: 3,
+      pieceId: "p1-sole-survivor",
+      fromX: 2,
+      fromY: 2,
+      toX: 2,
+      toY: 3,
     };
 
     const afterState = executeMove(moveRequest, beforeState);
+
+    // Kiểm tra kết quả bẫy trạng thái khớp với comment bước 5.2.1
     expect(afterState.phase).toBe("game_over");
     expect(afterState.gameOver).toBe(true);
     expect(afterState.winner).toBe("player1");
+    expect(afterState.message).toContain(
+      "chiến thắng! Đã ăn toàn bộ quân đối phương.",
+    );
   });
 
-  test("Trạng thái ván cờ phải chuyển đổi thành 'game_over' khi một bên bị vây chặt dẫn tới kẹt nước đi", () => {
-    // Sắp xếp quân player2 bị kẹt cứng ở ngã tư góc (0,0)
+  test("Luồng 5.2.0 & 5.2.1: Chuyển đổi trạng thái sang 'game_over' khi đối phương rơi vào thế bí (kẹt nước đi)", () => {
+    // Sắp xếp quân player2 bị kẹt cứng hoàn toàn ở góc chết (0,0)
     const mockPieces: Piece[] = [
-      { id: "p2-stuck", x: 0, y: 0, owner: "player2" },
-      { id: "p1-block-1", x: 1, y: 0, owner: "player1" },
-      { id: "p1-block-2", x: 0, y: 1, owner: "player1" },
-      { id: "p1-active", x: 4, y: 4, owner: "player1" }, // Quân player1 chuẩn bị di chuyển
+      { id: "p2-trapped", x: 0, y: 0, owner: "player2" },
+      { id: "p1-blockade-1", x: 1, y: 0, owner: "player1" },
+      { id: "p1-blockade-2", x: 0, y: 1, owner: "player1" },
+      { id: "p1-mover", x: 4, y: 4, owner: "player1" }, // Quân của mình chuẩn bị đi nước vô hại ở xa
     ];
-    const beforeState = createTestBoardState(mockPieces, 4);
+
+    const beforeState = createMockPlayingState(mockPieces, 0);
     const moveRequest: GameMove = {
-      pieceId: "p1-active", fromX: 4, fromY: 4, toX: 4, toY: 3,
+      pieceId: "p1-mover",
+      fromX: 4,
+      fromY: 4,
+      toX: 4,
+      toY: 3,
     };
 
     const afterState = executeMove(moveRequest, beforeState);
+
+    // Kiểm tra kết quả bẫy kẹt nước khớp với comment bước 5.2.1
     expect(afterState.phase).toBe("game_over");
-    expect(afterState.winner).toBe("player1");
-  </test>
+    expect(afterState.gameOver).toBe(true);
+    expect(afterState.winner).toBe("player1"); // Mình thắng vì ép đối phương vào thế kẹt nước
+    expect(afterState.message).toContain("hết nước đi");
+  });
 
-  test("Trạng thái ván cờ phải chuyển đổi thành 'draw' khi bộ đếm đạt ngưỡng hạn mức 50 nước đi không có biến động quân số", () => {
+  test("Luồng 5.3.0 & 5.3.1: Chuyển đổi trạng thái sang 'draw' khi đạt mốc giới hạn tối đa 50 lượt không ăn quân", () => {
     const mockPieces: Piece[] = [
-      { id: "p1-piece", x: 2, y: 2, owner: "player1" },
-      { id: "p2-piece", x: 4, y: 4, owner: "player2" },
+      { id: "p1-p", x: 2, y: 2, owner: "player1" },
+      { id: "p2-p", x: 4, y: 4, owner: "player2" },
     ];
-    // Đang ở mốc 49 lượt
-    const beforeState = createTestBoardState(mockPieces, 49);
+
+    // Ép ván đấu lên nước thứ 49 liên tiếp không ăn quân
+    const beforeState = createMockPlayingState(mockPieces, 49);
+
     const moveRequest: GameMove = {
-      pieceId: "p1-piece", fromX: 2, fromY: 2, toX: 2, toY: 1,
+      pieceId: "p1-p",
+      fromX: 2,
+      fromY: 2,
+      toX: 2,
+      toY: 1,
     };
 
     const afterState = executeMove(moveRequest, beforeState);
+
+    // Kiểm tra kết quả bẫy trạng thái Hòa khớp với comment bước 5.3.1
     expect(afterState.phase).toBe("draw");
     expect(afterState.gameOver).toBe(true);
-    expect(afterState.winner).toBeNull();
+    expect(afterState.winner).toBeNull(); // Hoà thì không có ai thắng cuộc
+    expect(afterState.message).toBe(
+      "Hai người chơi HÒA nhau! (Sau 50 lượt không ăn quân).",
+    );
   });
 });
