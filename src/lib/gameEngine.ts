@@ -1,3 +1,5 @@
+// NÂNG CẤP UC-1: Bổ sung cấu hình khởi tạo hệ thống bởi Lê Nguyễn Hửu Chí (05/06/2026)
+
 export type Player = "player1" | "player2";
 export type PieceColor = "player1" | "player2";
 
@@ -15,6 +17,9 @@ export interface BoardState {
   gameOver: boolean;
   winner: Player | null;
   message: string;
+  // --- THÀNH PHẦN NÂNG CẤP CHO UC-1 ---
+  turnTimeoutSeconds: number; // Thời gian đếm ngược mặc định cho mỗi lượt đi
+  isTimerActive: boolean;     // Trạng thái kích hoạt bộ đếm thời gian
 }
 
 export interface GameMove {
@@ -28,9 +33,9 @@ export interface GameMove {
 export const BOARD_SIZE = 5;
 export const TOTAL_PIECES = 16;
 
-// =========================================================================
-// [UC-1: Khởi động và Thiết lập ván cờ]
-// =========================================================================
+
+// [UC-1: Khởi động và Thiết lập ván cờ] - NÂNG CẤP BỞI CHÍ (05/06/2026)
+
 export function initializeBoard(): BoardState {
   const pieces: Piece[] = [];
   let id = 0;
@@ -60,15 +65,18 @@ export function initializeBoard(): BoardState {
     gameOver: false,
     winner: null,
     message: "Đến lượt Người chơi 1",
+    // --- CẤU HÌNH NÂNG CẤP HỆ THỐNG (UC-1) ---
+    turnTimeoutSeconds: 30, // Mặc định mỗi lượt có 30 giây để đi cờ nhằm tránh ngâm bài
+    isTimerActive: true     // Bật tính năng đếm ngược hệ thống
   };
 }
 
-// =========================================================================
+
 // [UC-3: Xác thực tính hợp lệ của nước đi]
 /**
  * Hỗ trợ logic xác thực cho Bước 3.2 và kiểm tra nước đi kế tiếp ở Bước 3.4.2.
  */
-// =========================================================================
+
 function isValidPosition(x: number, y: number, pieces: Piece[]): boolean {
   if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) {
     return false;
@@ -76,13 +84,13 @@ function isValidPosition(x: number, y: number, pieces: Piece[]): boolean {
   return !pieces.some((p) => p.x === x && p.y === y);
 }
 
-// =========================================================================
+
 // [UC-3: Xác thực tính hợp lệ của nước đi]
 /**
  * Bước 3.4.2: Lấy danh sách các ô kề cận hợp lệ để di chuyển.
  */
 // Gắn với UC-2.4 (View/Controller gọi Model để lấy valid moves)
-// =========================================================================
+
 export function getValidMoves(
   pieceId: string,
   state: BoardState,
@@ -115,15 +123,15 @@ export function getValidMoves(
     }
   }
   /**
- * Bước 3.3.1: Xử lý Gánh (Luật ăn quân cơ bản của UC-4).
- */
-   // UC-2.5: trả danh sách về View
+   * Bước 3.3.1: Xử lý Gánh (Luật ăn quân cơ bản của UC-4).
+   */
+  // UC-2.5: trả danh sách về View
   return validMoves;
 }
 
-// =========================================================================
+
 // [UC-4: Thực thi luật bắt quân]
-// =========================================================================
+
 function processGanh(
   movedPieceId: string,
   newX: number,
@@ -169,10 +177,10 @@ function processGanh(
   return capturedIds;
 }
 
-// =========================================================================
+
 // [UC-4: Thực thi luật bắt quân] (GIAI ĐOẠN 2)
 // Chức năng chờ: Dummy Function thiết lập khung gốc cho "Luật Chẹt"
-// =========================================================================
+
 /**
  * Bước 3.3.2: Dự phòng Xử lý Chẹt/Vây (Phase 2).
  */
@@ -185,10 +193,10 @@ function processChat(
   return []; // FIXME: Dummy function for Phase 2
 }
 
-// =========================================================================
+
 // [UC-4: Thực thi luật bắt quân] (GIAI ĐOẠN 2)
 // Chức năng chờ: Dummy Function thiết lập khung gốc cho "Luật Vây" (Chặn đường lui)
-// =========================================================================
+
 function processSurrounding(pieces: Piece[]): string[] {
   return []; // FIXME: Dummy function for Phase 2
 }
@@ -203,19 +211,22 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
     gameOver: state.gameOver,
     winner: state.winner,
     message: state.message,
+    // Giữ nguyên cấu hình UC-1 qua các lượt state
+    turnTimeoutSeconds: state.turnTimeoutSeconds,
+    isTimerActive: state.isTimerActive
   };
   // Bước 3.2: Kiểm tra tính hợp lệ (Validation)
   // Bước 3.2.1: Kiểm tra sự tồn tại của quân cờ dựa trên pieceId
   const piece = newState.pieces.find((p) => p.id === move.pieceId);
 
-   // Bước 3.2.1a: Alternate Flow - Quân cờ không hợp lệ
+  // Bước 3.2.1a: Alternate Flow - Quân cờ không hợp lệ
   // 3.2.1a.1: Trả về trạng thái hiện tại không thay đổi
   if (!piece) return state;
 
-  // =========================================================================
+
   // [UC-4: Thực thi luật bắt quân]
   // =========================================================================
-   // Bước 3.2.2: Cập nhật tọa độ mới vào newState
+  // Bước 3.2.2: Cập nhật tọa độ mới vào newState
   // 4.2 Model tiến hành cập nhật tọa độ mới cho quân cờ vừa đi trên mảng dữ liệu ảo.
   piece.x = move.toX;
   piece.y = move.toY;
@@ -237,31 +248,28 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
     if (capturedPiece) capturedPiece.owner = newState.currentPlayer;
   }
 
-   // Bước 3.3.2: Dự phòng xử lý Chẹt/Vây (Mở rộng cho Phase 2)
+  // Bước 3.3.2: Dự phòng xử lý Chẹt/Vây (Mở rộng cho Phase 2)
 
   // Bước 3.4: Hoàn tất lượt đi và Chuyển đổi trạng thái
   // Bước 3.4.1: Kiểm tra điều kiện thắng (Nếu đạt 16 quân)
 
-  // =========================================================================
+ 
   // [UC-5: Theo dõi diễn biến và và Xử lý kết quả]
-  // =========================================================================
+
   const p1Count = newState.pieces.filter((p) => p.owner === "player1").length;
   const p2Count = newState.pieces.filter((p) => p.owner === "player2").length;
 
   if (p1Count === TOTAL_PIECES) {
     newState.gameOver = true;
     newState.winner = "player1";
-    newState.message =
-      "Người chơi 1 chiến thắng! Đã ăn toàn bộ quân đối phương.";
+    newState.message = "Người chơi 1 chiến thắng! Đã ăn toàn bộ quân đối phương.";
   } else if (p2Count === TOTAL_PIECES) {
     newState.gameOver = true;
     newState.winner = "player2";
-    newState.message =
-      "Người chơi 2 chiến thắng! Đã ăn toàn bộ quân đối phương.";
+    newState.message = "Người chơi 2 chiến thắng! Đã ăn toàn bộ quân đối phương.";
   } else {
     // Bước 3.4.2: Đổi lượt đi (Đảo ngược currentPlayer)
-    newState.currentPlayer =
-      newState.currentPlayer === "player1" ? "player2" : "player1";
+    newState.currentPlayer = newState.currentPlayer === "player1" ? "player2" : "player1";
 
     const nextPlayerPieces = newState.pieces.filter(
       (p) => p.owner === newState.currentPlayer,
@@ -272,22 +280,18 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
     // Bước 3.4.2a: Alternate Flow - Người chơi kế tiếp hết nước đi
     if (nextPlayerPieces.length === 0 || !hasValidMoves) {
       newState.gameOver = true;
-      newState.winner =
-        newState.currentPlayer === "player1" ? "player2" : "player1";
-      const loserName =
-        newState.currentPlayer === "player1" ? "Người chơi 1" : "Người chơi 2";
-      const winnerName =
-        newState.winner === "player1" ? "Người chơi 1" : "Người chơi 2";
+      newState.winner = newState.currentPlayer === "player1" ? "player2" : "player1";
+      const loserName = newState.currentPlayer === "player1" ? "Người chơi 1" : "Người chơi 2";
+      const winnerName = newState.winner === "player1" ? "Người chơi 1" : "Người chơi 2";
       newState.message = `${loserName} hết nước đi. ${winnerName} chiến thắng!`;
     } else {
       // Bước 3.4.3: Cập nhật thông điệp tương ứng (Ví dụ: "Đến lượt Người chơi 2")
-      const playerName =
-        newState.currentPlayer === "player1" ? "Người chơi 1" : "Người chơi 2";
+      const playerName = newState.currentPlayer === "player1" ? "Người chơi 1" : "Người chơi 2";
       newState.message = `Đến lượt ${playerName}`;
     }
   }
 
-  // =========================================================================
+
   // [UC-4: Thực thi luật bắt quân]
   // =========================================================================
   // 4.5 Model trả mảng bàn cờ (BoardState) mới đã cập nhật xong xuôi về cho Controller.
