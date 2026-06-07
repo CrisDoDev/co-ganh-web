@@ -1,14 +1,12 @@
 ﻿"use client";
 
 interface GameInfoProps {
-  // [UC-5][5.5] Dữ liệu View nhận được để hiển thị diễn biến ván đấu
   playerName: string;
-  // [UC-5][5.5] Dữ liệu để View làm nổi bật người chơi đang đến lượt
   isActive: boolean;
-  // [UC-5][5.5] Dữ liệu hiển thị số lượng quân cờ còn lại
   pieces: number;
-  // [UC-5][5.5] Dữ liệu hiển thị màu quân cờ
   color: string;
+  timeLeft?: number; // Cập nhật Nhận dữ liệu đếm ngược
+  score?: number; // Cập nhật: Nhận tổng số trận thắng
 }
 
 export default function GameInfo({
@@ -16,17 +14,15 @@ export default function GameInfo({
   isActive,
   pieces,
   color,
+  timeLeft,
+  score = 0,
 }: GameInfoProps) {
-  // Lưu ý: Component này thuần túy là View. Không chứa logic của Controller [5.2]
-  // hay logic kiểm tra trạng thái thắng/thua của Model [5.4].
-  // Mọi dữ liệu truyền vào đây đều đã được tính toán xong.
   return (
     <div
-      //  [UC-5][5.5] View hiển thị lại giao diện diễn biến trận đấu
       className={`
-      bg-card border-2 rounded-lg p-6 shadow-lg transition-all
-      ${isActive ? `${color} ring-2 ring-offset-2 ring-primary` : "border-border"}
-    `}
+        bg-card border-2 rounded-lg p-6 shadow-lg transition-all
+        ${isActive ? `${color} ring-2 ring-offset-2 ring-primary` : "border-border"}
+      `}
     >
       <div className="space-y-4">
         <h3 className="text-xl font-serif font-bold text-primary text-center">
@@ -35,9 +31,9 @@ export default function GameInfo({
 
         <div
           className={`
-          p-4 rounded-lg
-          ${playerName.includes("1") ? "bg-primary/10" : "bg-secondary/10"}
-        `}
+            p-4 rounded-lg
+            ${playerName.includes("1") ? "bg-primary/10" : "bg-secondary/10"}
+          `}
         >
           <p className="text-center text-2xl font-serif font-bold text-primary">
             {playerName.includes("1") ? "●" : "○"}
@@ -48,7 +44,6 @@ export default function GameInfo({
           <p className="text-muted-foreground">
             <span className="font-semibold text-foreground">Trạng thái:</span>{" "}
             {isActive ? (
-              // [UC-5][5.5] Hiển thị trạng thái người chơi và số quân hiện tại
               <span className="text-accent font-semibold">Đến lượt</span>
             ) : (
               <span className="text-muted-foreground">Đang chờ</span>
@@ -58,6 +53,24 @@ export default function GameInfo({
             <span className="font-semibold text-foreground">Số quân:</span>{" "}
             {pieces}/16
           </p>
+
+          {/* Cập nhật: Hiển thị tổng số trận thắng chung cuộc của người chơi */}
+          <p className="text-muted-foreground">
+            <span className="font-semibold text-foreground">
+              Thắng chung cuộc:
+            </span>{" "}
+            <span className="font-bold text-lg text-primary">{score} ván</span>
+          </p>
+
+          {/* Cập nhật: Hiển thị đồng hồ đếm ngược nếu đang trong lượt đi */}
+          {isActive && timeLeft !== undefined && (
+            <p className="text-muted-foreground items-center text-[#a94438]">
+              <span className="font-semibold text-[#a94438]">Thời gian:</span>{" "}
+              <span className="text-base font-bold animate-pulse">
+                {timeLeft}s
+              </span>
+            </p>
+          )}
         </div>
 
         {isActive && (
@@ -67,6 +80,5 @@ export default function GameInfo({
         )}
       </div>
     </div>
-    // [UC-5][5.6] Nếu trận đấu kết thúc, hệ thống hiển thị kết quả cho Người chơi
   );
 }

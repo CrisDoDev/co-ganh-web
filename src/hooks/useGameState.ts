@@ -1,40 +1,83 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   initializeBoard,
   executeMove,
+  passTurn,
   type BoardState,
   type GameMove,
 } from "@/lib/gameEngine";
+
+const TURN_TIME_LIMIT = 30;
 
 export function useGameState() {
   const [boardState, setBoardState] = useState<BoardState | null>(null);
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
 
-  // =========================================================================
-  // [UC-1: Khởi động và Thiết lập ván cờ]
-  // =========================================================================
+  const [scores, setScores] = useState({
+    player1: 0,
+    player2: 0,
+    initialized: false,
+  });
+
+  const [timeLeft, setTimeLeft] = useState<number>(TURN_TIME_LIMIT);
+
   const initGame = useCallback(() => {
     setBoardState(initializeBoard());
     setSelectedPiece(null);
+    setTimeLeft(TURN_TIME_LIMIT);
   }, []);
 
-  // =========================================================================
-  // [UC-2: Tương tác di chuyển quân cờ]
-  // =========================================================================
+  useEffect(() => {
+    if (!boardState || boardState.phase !== "playing") return;
+    const timerId = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timerId);
+  }, [boardState?.currentPlayer, boardState?.phase]);
+
+  useEffect(() => {
+    if (timeLeft <= 0 && boardState?.phase === "playing") {
+      setBoardState((currentState) => {
+        if (currentState) return passTurn(currentState);
+        return currentState;
+      });
+      setSelectedPiece(null);
+      setTimeLeft(TURN_TIME_LIMIT);
+    }
+  }, [timeLeft, boardState?.phase]);
+
+  useEffect(() => {
+    if (boardState?.phase === "playing") {
+      setTimeLeft(TURN_TIME_LIMIT);
+    }
+  }, [boardState?.currentPlayer, boardState?.phase]);
+
+  useEffect(() => {
+    // 5.2.3 Controller (useGameState) phát hiện phase === "game_over", lập tức trigger useEffect kích hoạt bộ đếm để cộng thêm 1 trận thắng cho winner.
+    if (
+      boardState?.phase === "game_over" &&
+      boardState.winner &&
+      !scores.initialized
+    ) {
+      const winnerKey = boardState.winner as "player1" | "player2";
+      setScores((prev) => ({
+        ...prev,
+        [winnerKey]: prev[winnerKey] + 1,
+        initialized: true,
+      }));
+    }
+    // 5.3.3 Controller cập nhật State nội bộ, giữ nguyên tổng tỷ số trận đấu (không ai được cộng điểm).
+    else if (boardState?.phase === "playing" && scores.initialized) {
+      setScores((prev) => ({ ...prev, initialized: false }));
+    }
+  }, [boardState?.phase, boardState?.winner]);
+
   const handlePieceSelect = useCallback((pieceId: string) => {
-    // UC-2.1: Người chơi click vào quân cờ thuộc phe mình
-    // UC-2.2: View gửi event sang Controller (handlePieceSelect)
-
-    // UC-2.3: Controller xử lý logic chọn quân
     setSelectedPiece((prev) => (prev === pieceId ? null : pieceId));
-
-     // UC-2.3.1: Nếu đã chọn thì bỏ chọn (toggle)
-    // UC-2.3.2: Nếu chưa chọn thì set quân đang được chọn
   }, []);
 
   const handleMove = useCallback(
     (toX: number, toY: number) => {
-        // UC-2.7: Người chơi click vào ô đích
       if (!boardState || !selectedPiece) return;
 
       const piece = boardState.pieces.find((p) => p.id === selectedPiece);
@@ -47,22 +90,14 @@ export function useGameState() {
         toX,
         toY,
       };
-       // UC-2.8: Controller gửi request sang Model (executeMove)
 
-      // =========================================================================
-      // [UC-4: Thực thi luật bắt quân]
-      // =========================================================================
-      // 4.1 Controller gửi yêu cầu thực thi nước đi (kèm move) sang Model (gameEngine)
+      // 5.1.1 Controller (useGameState) gửi yêu cầu kiểm tra cục diện ván cờ sang Model (gameEngine).
       const newState = executeMove(move, boardState);
 
-      // 4.6 Controller cập nhật State nội bộ, kích hoạt View re-render lại giao diện
-
-      // UC-2.9: Controller nhận state mới từ Model
+      // 5.1.5 Controller cập nhật State nội bộ, kích hoạt View (GameInfo) re-render để hiển thị số quân thực tế và làm nổi bật viền của người đến lượt đi.
       setBoardState(newState);
-
-
-    // UC-2.10: Reset trạng thái chọn quân cờ sau khi đi xong
       setSelectedPiece(null);
+      setTimeLeft(TURN_TIME_LIMIT);
     },
     [boardState, selectedPiece],
   );
@@ -70,6 +105,8 @@ export function useGameState() {
   return {
     boardState,
     selectedPiece,
+    timeLeft,
+    scores,
     initGame,
     handlePieceSelect,
     handleMove,
