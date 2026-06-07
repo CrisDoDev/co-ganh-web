@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+// @ts-nocheck
 import { getValidMoves, initializeBoard } from './gameEngine';
 
 describe('Development Testing - UC-2', () => {
