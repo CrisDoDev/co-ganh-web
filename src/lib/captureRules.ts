@@ -1,4 +1,3 @@
-// src/lib/captureRules.ts
 import { Piece, Position } from "./types";
 import { BoardTopology } from "./boardTopology";
 
@@ -57,5 +56,68 @@ export function getCapturedByGanh(
   }
 
   // Khử trùng lặp (phòng hờ)
+  return Array.from(new Set(capturedPieces));
+}
+
+
+// 2. LUẬT CHẸT
+// Xảy ra khi ta đi vào tạo thế gọng kìm, kẹp đúng 1 quân đối phương ở giữa ta và 1 quân của mình
+export function getCapturedByChet(
+  toX: number,
+  toY: number,
+  myOwner: string,
+  pieces: Piece[],
+): Piece[] {
+  const capturedPieces: Piece[] = [];
+  const opponentOwner = myOwner === "player1" ? "player2" : "player1";
+
+  // Check 8 hướng xung quanh (kể cả xa hơn để tìm vị trí kẹp)
+  const dirs = [
+    { dx: 0, dy: -1 },
+    { dx: 0, dy: 1 },
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: -1, dy: -1 },
+    { dx: 1, dy: -1 },
+    { dx: -1, dy: 1 },
+    { dx: 1, dy: 1 },
+  ];
+
+  for (const dir of dirs) {
+    // Quân địch kế bên
+    const targetX = toX + dir.dx;
+    const targetY = toY + dir.dy;
+
+    // Nếu đi theo hướng chéo từ 1 ô không có chéo thì không hợp lệ
+    if (
+      dir.dx !== 0 &&
+      dir.dy !== 0 &&
+      !BoardTopology.canMoveDiagonal(toX, toY)
+    )
+      continue;
+    if (
+      !BoardTopology.canMoveDiagonal(targetX, targetY) &&
+      dir.dx !== 0 &&
+      dir.dy !== 0
+    )
+      continue;
+
+    // Ô thứ 2 theo hướng đó (Phải là quân của mình kẹp ở đầu kia)
+    const myAllyX = toX + dir.dx * 2;
+    const myAllyY = toY + dir.dy * 2;
+
+    const opPiece = pieces.find((p) => p.x === targetX && p.y === targetY);
+    const myAllyPiece = pieces.find((p) => p.x === myAllyX && p.y === myAllyY);
+
+    if (
+      opPiece &&
+      opPiece.owner === opponentOwner &&
+      myAllyPiece &&
+      myAllyPiece.owner === myOwner
+    ) {
+      capturedPieces.push(opPiece);
+    }
+  }
+
   return Array.from(new Set(capturedPieces));
 }
