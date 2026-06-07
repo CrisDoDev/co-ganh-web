@@ -1,5 +1,5 @@
 
-import { initializeBoard, executeMove } from "./gameEngine";
+import { initializeBoard, executeMove, getValidMoves } from "./gameEngine";
 import { BoardState, GameMove, Piece } from "./types";
 
 describe("UC-1: Kiểm thử Khởi tạo và thiết lập ván cờ - Khớp đặc tả luồng UC-1", () => {
@@ -20,6 +20,24 @@ describe("UC-1: Kiểm thử Khởi tạo và thiết lập ván cờ - Khớp �
     expect(state.phase).toBe("playing");         // Ván đấu ở trạng thái đang chơi
     expect(state.gameOver).toBe(false);          // Cờ hiệu kết thúc ván đấu bằng false
     expect(state.movesWithoutCapture).toBe(0);   // Bộ đếm nước đi hòa reset về mốc 0
+  });
+});
+
+describe("UC-2: Di chuyển quân cờ - Khớp đặc tả và kiểm tra nâng cấp hình học", () => {
+  test("TC-UC2-01: Kiểm tra luật chặn đi chéo tại các ô tọa độ lẻ (Topology Matrix)", () => {
+    const state = initializeBoard();
+    
+    // Chọn quân ở (0,1) -> tổng tọa độ là 1 (lẻ) -> Luật GĐ2: không được đi chéo
+    const piece = state.pieces.find((p) => p.x === 0 && p.y === 1)!;
+    const moves = getValidMoves(piece.id, state);
+    
+    // Kiểm tra xem có nước đi chéo nào không (tọa độ lệch 1 cả x và y)
+    const hasDiagonal = moves.some(
+      (m) => Math.abs(m.x - piece.x) === 1 && Math.abs(m.y - piece.y) === 1
+    );
+    
+    // Kết quả phải là false (không được đi chéo ở ô có tổng tọa độ lẻ)
+    expect(hasDiagonal).toBe(false); 
   });
 });
 

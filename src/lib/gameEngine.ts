@@ -5,41 +5,19 @@ import {
   getCapturedByChet,
   getCapturedByVay,
 } from "./captureRules";
+import {
+  Piece,
+  BoardState,
+  GameMove,
+  Player,
+  PieceColor,
+  GamePhase,
+} from "./types";
 
-export type Player = "player1" | "player2";
-export type PieceColor = "player1" | "player2";
-
-// Đối tượng quân cờ
-export interface Piece {
-  id: string;
-  x: number;
-  y: number;
-  owner: PieceColor;
-}
-
-// State Pattern: Định nghĩa các trạng thái vòng đời của ván cờ
-export type GamePhase = "playing" | "game_over" | "draw";
-
-export interface BoardState {
-  pieces: Piece[];
-  currentPlayer: Player;
-  moveHistory: string[];
-  gameOver: boolean;
-  winner: Player | null;
-  message: string;
-  movesWithoutCapture: number;
-  phase: GamePhase; // Thuộc tính cốt lõi của State Pattern quản lý hành vi game
-  lastCapturedIds?: string[];
-}
-
-// Struct thông tin khi di chuyển
-export interface GameMove {
-  pieceId: string;
-  fromX: number;
-  fromY: number;
-  toX: number;
-  toY: number;
-}
+// Export các type cần thiết cho các chỗ khác dùng
+export * from "./types";
+export * from "./boardTopology";
+export * from "./captureRules";
 
 export const BOARD_SIZE = 5;
 export const TOTAL_PIECES = 16;
@@ -76,14 +54,14 @@ export function initializeBoard(): BoardState {
     moveHistory: [],
     gameOver: false,
     winner: null,
-    message: "Đến lượt Người chơi 1",
-    movesWithoutCapture: 0,
     phase: "playing",
+    movesWithoutCapture: 0,
+    message: "Đến lượt Người chơi 1",
   };
 }
 
 // =========================================================================
-// [UC-3: Xác thực nước đi hợp lệ]
+// [UC-2 & UC-3: Xác thực nước đi hợp lệ & Di chuyển quân cờ]
 // Sử dụng BoardTopology để tìm đường đi chính xác (ngang, dọc, chéo được phép)
 // =========================================================================
 export function getValidMoves(
@@ -94,13 +72,18 @@ export function getValidMoves(
   const piece = state.pieces.find((p) => p.id === pieceId);
 
   // [AF1] Quân cờ không tồn tại hoặc không thuộc lượt hiện tại.
+  // 2.2.0 Luồng chọn quân không hợp lệ: Nếu người chơi click vào quân cờ không thuộc lượt của mình.
   if (!piece || piece.owner !== state.currentPlayer) return [];
 
+  // 2.1.3 Model quét các ô lân cận theo luật di chuyển của cờ Gánh.
   // 3.3.0 Hệ thống xác định các ô lân cận có thể di chuyển dựa trên topology bàn cờ
   const neighbors = BoardTopology.getAvailableNeighbors(piece.x, piece.y);
 
   // 3.4.0 Hệ thống kiểm tra tính hợp lệ của từng ô đích.
+  // 2.1.3.0 Model kiểm tra từng ô có nằm trong phạm vi bàn cờ hay không (Xử lý thông qua Topology cố định).
+  // 2.1.3.1 Model kiểm tra ô đó có đang trống và hợp lệ để di chuyển hay không.
   // 3.5.0 Hệ thống trả về danh sách nước đi hợp lệ.
+  // 2.1.3.2 Model trả về danh sách các tọa độ có thể đi.
   return neighbors.filter(
     (n) => !state.pieces.some((p) => p.x === n.x && p.y === n.y),
   );
