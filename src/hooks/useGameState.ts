@@ -69,6 +69,9 @@ export function useGameState() {
     }
   }, [boardState?.currentPlayer, boardState?.phase]);
 
+  // =========================================================================
+  // [UC-5: Cập nhật diễn biến và xử lý kết quả - Theo dõi Endgame]
+  // =========================================================================
   // 4. Cập nhật tỷ số khi kết thúc ván
   useEffect(() => {
     // 5.2.3 Controller (useGameState) phát hiện phase === "game_over", lập tức trigger useEffect kích hoạt bộ đếm để cộng thêm 1 trận thắng cho winner.
@@ -91,9 +94,11 @@ export function useGameState() {
   }, [boardState?.phase, boardState?.winner, scores.initialized]);
 
   // =========================================================================
-  // [UC-2: Tương tác di chuyển quân cờ - Chọn quân cờ]
+  // [UC-2 & UC-3: Tương tác chọn quân cờ]
   // =========================================================================
   const handlePieceSelect = useCallback((pieceId: string) => {
+    // UC-2.1: Người chơi click vào quân cờ thuộc phe mình
+    // UC-2.2: View gửi event sang Controller (handlePieceSelect)
     // 2.1.1 View gửi sự kiện chọn quân cờ sang Controller.
     // 2.1.2 Controller kiểm tra tính hợp lệ của quân cờ được chọn.
     // 3.2.0 Controller nhận yêu cầu chọn quân cờ từ View và cập nhật quân cờ đang được chọn
@@ -102,15 +107,17 @@ export function useGameState() {
     // 2.2.0.0 Controller từ chối yêu cầu chọn quân (Bỏ chọn set null nếu click lại quân cũ).
     // 2.2.2.0 Hệ thống hủy trạng thái chọn quân cờ cũ.
     // 2.2.2.1 Hệ thống thực hiện lại quy trình từ bước 2.2 với quân cờ mới.
+    // UC-2.3.1: Nếu đã chọn thì bỏ chọn (toggle)
+    // UC-2.3.2: Nếu chưa chọn thì set quân đang được chọn
     setSelectedPiece((prev) => (prev === pieceId ? null : pieceId));
   }, []);
 
   // =========================================================================
-  // [UC-2: Tương tác di chuyển quân cờ - Thực hiện nước đi]
+  // [UC-2, UC-3, UC-4, UC-5: Thực hiện nước đi & pipeline xử lý Model]
   // =========================================================================
   const handleMove = useCallback(
     (toX: number, toY: number) => {
-      // 2.1.7 View gửi yêu cầu thực hiện nước đi sang Controller.
+      // UC-2.7: Người chơi click vào ô đích
       // 3.7.0 Controller nhận yêu cầu di chuyển tới ô đích từ View
       
       // 2.2.1.0 Controller từ chối thực hiện nước đi (chặn lỗi nếu state rỗng).
@@ -121,6 +128,7 @@ export function useGameState() {
       // [AF1 - 3.2.1] Không tìm thấy quân cờ hợp lệ
       if (!piece) return;
 
+      // 4.1.0 Hệ thống kết thúc UC-3 thành công.
       const move: GameMove = {
         pieceId: selectedPiece,
         fromX: piece.x,
@@ -131,10 +139,12 @@ export function useGameState() {
 
       // 2.1.8 Controller cập nhật dữ liệu bàn cờ với vị trí mới của quân cờ.
       // 3.8.0 Controller gửi yêu cầu xác nhận nước đi tới Model
+      // 4.1.1 Controller (useGameState) gửi yêu cầu thực thi nước đi sang Model (gameEngine).
       // 5.1.1 Controller (useGameState) gửi yêu cầu kiểm tra cục diện ván cờ sang Model (gameEngine).
       const newState = executeMove(move, boardState);
 
       // 3.9.0 Nhận trạng thái mới sau khi nước đi được xác nhận
+      // 4.1.9 Controller cập nhật State nội bộ và kích hoạt View re-render giao diện bàn cờ.
       // 5.1.5 Controller cập nhật State nội bộ, kích hoạt View (GameInfo) re-render để hiển thị số quân thực tế và làm nổi bật viền của người đến lượt đi.
       // 2.1.9 View cập nhật giao diện bàn cờ (thông qua React State triggers re-render).
       setBoardState(newState);
@@ -150,7 +160,7 @@ export function useGameState() {
   return {
     boardState,
     selectedPiece,
-    timeLeft, // Xuất ra View để hiển thị thanh Progress Bar thời gian
+    timeLeft,
     scores,
     initGame,
     handlePieceSelect,

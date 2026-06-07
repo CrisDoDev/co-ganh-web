@@ -100,6 +100,7 @@ export function hasAnyValidMoves(state: BoardState, player: Player): boolean {
 
 // =========================================================================
 // [UC-2, UC-4, UC-5: Thực thi nước đi & Gộp luồng Capture]
+// Chức năng: Aggregator gom logic từ mọi nguồn tạo ra State Immutable mới
 // =========================================================================
 export function executeMove(move: GameMove, state: BoardState): BoardState {
   if (state.phase !== "playing") return state;
@@ -114,7 +115,7 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
   const myOwner = movedPiece.owner;
   const opponent = myOwner === "player1" ? "player2" : "player1";
 
-  // Chạy Pipeline Capture Rules [UC-4] (Gánh -> Chẹt -> Vây)
+  // 2. Chạy Pipeline Capture Rules [UC-4] (Gánh -> Chẹt -> Vây)
   const capturedByGanh = getCapturedByGanh(
     move.toX,
     move.toY,
@@ -132,6 +133,9 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
   let isCaptureHappen = totalCaptured.length > 0;
   let lastCapturedIds: string[] = [];
 
+  // Đổi màu quân bị ăn tức thì trước khi rà soát Vây (Vì Gánh/Chẹt dọn đường rồi mới tính Vây)
+  // 4.1.7 Model lặp qua mảng danh sách "bị bắt" và tiến hành đổi màu (đổi thuộc tính owner) của các quân cờ đó sang phe người vừa đánh.
+  // 4.2.1 Model bỏ qua bước 4.1.6 và 4.1.7 (Mảng bị bắt rỗng).
   for (const piece of totalCaptured) {
     const target = newPieces.find((p) => p.id === piece.id);
     if (target) {
@@ -140,6 +144,7 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
     }
   }
 
+  // Chạy tiếp Vây trên dữ liệu đã biến động
   const capturedByVay = getCapturedByVay(newPieces, opponent);
   if (capturedByVay.length > 0) {
     isCaptureHappen = true;
@@ -194,6 +199,8 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
     phase = "playing";
   }
 
+  // 4.1.8 Model trả mảng BoardState mới đã cập nhật về cho Controller.
+  // 4.2.2 Hệ thống chuyển thẳng đến bước 4.1.8 để trả về kết quả.
   // 5.1.4 Model trả mảng trạng thái cùng thông điệp an toàn về cho Controller.
   // 5.2.2 Model gửi trạng thái kết thúc ván đấu về cho Controller.
   // 5.3.2 Model gửi trạng thái Hòa về cho Controller.
@@ -211,7 +218,7 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
 }
 
 // =========================================================================
-// [UC-1: Cơ chế xử lý hết giờ suy nghĩ (Timer Auto-Switch)]
+// [UC-1: Cơ cơ chế xử lý hết giờ suy nghĩ (Timer Auto-Switch)]
 // =========================================================================
 export function passTurn(state: BoardState): BoardState {
   if (state.phase !== "playing") return state;

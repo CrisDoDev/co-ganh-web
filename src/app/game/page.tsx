@@ -32,12 +32,14 @@ export default function GamePage() {
   useEffect(() => {
     initGame();
   }, [initGame]);
-  if (!boardState)
+
+  if (!boardState) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         Loading...
       </div>
     );
+  }
 
   const player1Count = boardState.pieces.filter(
     (p) => p.owner === "player1",
@@ -48,22 +50,38 @@ export default function GamePage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-background to-muted">
-      {/* Message */}
-      {boardState.message && (
-        <div className="mb-6 p-4 bg-card border border-border rounded-lg text-center shadow-sm">
-          <p className="text-lg font-semibold text-foreground">
-            {boardState.message}
-          </p>
-          {boardState.phase === "playing" && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Lượt đi không bắt quân: {boardState.movesWithoutCapture} / 50
-            </p>
-          )}
+      {/* Header */}
+      <header className="bg-card border-b border-border shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
+          <h1 className="text-3xl font-serif font-bold text-primary">
+            Cờ Gánh
+          </h1>
+          <Link href="/">
+            <Button variant="outline" className="font-semibold">
+              Về Trang Chủ
+            </Button>
+          </Link>
         </div>
-      )}
+      </header>
 
+      {/* Main Game Area */}
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Message */}
+        {boardState.message && (
+          <div className="mb-6 p-4 bg-card border border-border rounded-lg text-center shadow-sm">
+            <p className="text-lg font-semibold text-foreground">
+              {boardState.message}
+            </p>
+            {boardState.phase === "playing" && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Lượt đi không bắt quân: {boardState.movesWithoutCapture} / 50
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Sidebar - Player 1 Info */}
           <div className="hidden lg:block">
             <GameInfo
               playerName="Người chơi 1"
@@ -80,6 +98,7 @@ export default function GamePage() {
             />
           </div>
 
+          {/* Center - Game Board */}
           <div className="lg:col-span-1 flex flex-col items-center justify-center">
             <GameBoard
               boardState={boardState}
@@ -90,6 +109,7 @@ export default function GamePage() {
             />
           </div>
 
+          {/* Right Sidebar - Player 2 Info */}
           <div className="hidden lg:block">
             <GameInfo
               playerName="Người chơi 2"
@@ -107,18 +127,46 @@ export default function GamePage() {
           </div>
         </div>
 
+        {/* Game Controls - Below Board */}
         <div className="mt-8 flex justify-center">
           <GameControls onRestart={initGame} />
         </div>
+
+        {/* Mobile Player Info */}
+        <div className="lg:hidden mt-8 space-y-4">
+          <GameInfo
+            playerName={
+              boardState.currentPlayer === "player1"
+                ? "Người chơi 1"
+                : "Người chơi 2"
+            }
+            isActive={true}
+            pieces={
+              boardState.currentPlayer === "player1"
+                ? player1Count
+                : player2Count
+            }
+            color="bg-primary/10 border-primary"
+            score={
+              boardState.currentPlayer === "player1"
+                ? scores.player1
+                : scores.player2
+            }
+            timeLeft={boardState.phase === "playing" ? timeLeft : undefined}
+          />
+        </div>
       </div>
 
-      {/* 5.2.4 View (GameInfo) nhận dữ liệu thay đổi, tự động mở Dialog Pop-up hiển thị tên người chiến thắng kèm lý do (ăn sạch quân hoặc đối phương hết nước đi). */}
-      {/* 5.3.4 View (GameInfo) nhận dữ liệu, kích hoạt mở Dialog Pop-up thông báo tiêu đề "HÒA NHAU! (Sau 50 lượt không ăn quân)". */}
+      {/* =========================================================================
+        [UC-5: Cập nhật diễn biến và xử lý kết quả]
+        5.2.4 View (GameInfo) nhận dữ liệu thay đổi, tự động mở Dialog Pop-up hiển thị tên người chiến thắng kèm lý do (ăn sạch quân hoặc đối phương hết nước đi).
+        5.3.4 View (GameInfo) nhận dữ liệu, kích hoạt mở Dialog Pop-up thông báo tiêu đề "HÒA NHAU! (Sau 50 lượt không ăn quân)".
+        ========================================================================= */}
       <AlertDialog open={boardState.phase !== "playing"}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {boardState.phase === "draw" ? "HÒA NHAU!" : "Trò Chơi Kết Thúc!"}
+              {boardState.phase === "draw" ? "Trận Đấu Hòa Ngang!" : "Trò Chơi Kết Thúc!"}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-lg mt-2">
               {boardState.message}

@@ -20,8 +20,7 @@ export default function GameControls({
   isTimeOut = false,
   currentPlayer = "X",
 }: GameControlsProps) {
-  // [UC-5][5.5] View hiển thị giao diện điều khiển ván đấu
-  // [UC-5][5.7] Nút để người chơi chọn thoát / làm mới ván đấu
+  
   return (
     <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
       
@@ -34,11 +33,11 @@ export default function GameControls({
           <h3 className="font-bold text-sm text-center mb-2 font-serif">Người chơi 1</h3>
           {currentPlayer === "X" ? (
             <div className="flex flex-col items-center mt-2">
-              {/* STT 4: Chỉ báo Thời gian */}
+              {/* Chỉ báo Thời gian */}
               <p className="text-destructive font-bold text-sm mb-1">
                 Thời gian: {isTimeOut ? "0" : turnTimeLeft}s
               </p>
-              {/* STT 5: Thanh đường kẻ dưới thời gian (Cố định, không co giãn) */}
+              {/* Thanh đường kẻ dưới thời gian (Cố định, không co giãn) */}
               <div className="h-1.5 w-full bg-destructive rounded-full"></div>
             </div>
           ) : (
