@@ -2,34 +2,58 @@ import { useState, useCallback, useEffect } from "react";
 import {
   initializeBoard,
   executeMove,
+  passTurn,
   type BoardState,
   type GameMove,
 } from "@/lib/gameEngine";
+
+const TURN_TIME_LIMIT = 30;
 
 export function useGameState() {
   const [boardState, setBoardState] = useState<BoardState | null>(null);
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
 
-  // Cập nhật: Quản lý tổng tỷ số trận đấu tích lũy qua nhiều ván cờ
   const [scores, setScores] = useState({
     player1: 0,
     player2: 0,
-    initialized: false, // Cờ hiệu bảo vệ chống trùng lặp dữ liệu re-render
+    initialized: false,
   });
 
-  // =========================================================================
-  // [UC-1: Khởi động và Thiết lập ván cờ]
-  // =========================================================================
+  const [timeLeft, setTimeLeft] = useState<number>(TURN_TIME_LIMIT);
+
   const initGame = useCallback(() => {
     setBoardState(initializeBoard());
     setSelectedPiece(null);
+    setTimeLeft(TURN_TIME_LIMIT);
   }, []);
 
-  // =========================================================================
-  // Xử lý vòng đời kết thúc game để cập nhật tỷ số
-  // =========================================================================
   useEffect(() => {
-    // Nếu trạng thái ván cờ chuyển sang "game_over" và có người thắng, tiến hành cộng điểm
+    if (!boardState || boardState.phase !== "playing") return;
+    const timerId = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timerId);
+  }, [boardState?.currentPlayer, boardState?.phase]);
+
+  useEffect(() => {
+    if (timeLeft <= 0 && boardState?.phase === "playing") {
+      setBoardState((currentState) => {
+        if (currentState) return passTurn(currentState);
+        return currentState;
+      });
+      setSelectedPiece(null);
+      setTimeLeft(TURN_TIME_LIMIT);
+    }
+  }, [timeLeft, boardState?.phase]);
+
+  useEffect(() => {
+    if (boardState?.phase === "playing") {
+      setTimeLeft(TURN_TIME_LIMIT);
+    }
+  }, [boardState?.currentPlayer, boardState?.phase]);
+
+  useEffect(() => {
+    // 5.2.3 Controller (useGameState) phát hiện phase === "game_over", lập tức trigger useEffect kích hoạt bộ đếm để cộng thêm 1 trận thắng cho winner.
     if (
       boardState?.phase === "game_over" &&
       boardState.winner &&
@@ -38,19 +62,16 @@ export function useGameState() {
       const winnerKey = boardState.winner as "player1" | "player2";
       setScores((prev) => ({
         ...prev,
-        [winnerKey]: prev[winnerKey] + 1, // Tăng điểm số tích lũy cho người thắng
-        initialized: true, // Khóa cờ hiệu để không bị cộng điểm lặp lại ở lượt re-render sau
+        [winnerKey]: prev[winnerKey] + 1,
+        initialized: true,
       }));
     }
-    // Khi một ván đấu mới được khởi tạo lại (quay về trạng thái "playing"), mở khóa cờ hiệu điểm số
+    // 5.3.3 Controller cập nhật State nội bộ, giữ nguyên tổng tỷ số trận đấu (không ai được cộng điểm).
     else if (boardState?.phase === "playing" && scores.initialized) {
       setScores((prev) => ({ ...prev, initialized: false }));
     }
-  }, [boardState?.phase, boardState?.winner, scores.initialized]);
+  }, [boardState?.phase, boardState?.winner]);
 
-  // =========================================================================
-  // [UC-2: Tương tác di chuyển quân cờ]
-  // =========================================================================
   const handlePieceSelect = useCallback((pieceId: string) => {
     setSelectedPiece((prev) => (prev === pieceId ? null : pieceId));
   }, []);
@@ -70,9 +91,13 @@ export function useGameState() {
         toY,
       };
 
+      // 5.1.1 Controller (useGameState) gửi yêu cầu kiểm tra cục diện ván cờ sang Model (gameEngine).
       const newState = executeMove(move, boardState);
+
+      // 5.1.5 Controller cập nhật State nội bộ, kích hoạt View (GameInfo) re-render để hiển thị số quân thực tế và làm nổi bật viền của người đến lượt đi.
       setBoardState(newState);
       setSelectedPiece(null);
+      setTimeLeft(TURN_TIME_LIMIT);
     },
     [boardState, selectedPiece],
   );
@@ -80,7 +105,8 @@ export function useGameState() {
   return {
     boardState,
     selectedPiece,
-    scores, // Xuất dữ liệu tổng tỷ số ra ngoài cho View sử dụng
+    timeLeft,
+    scores,
     initGame,
     handlePieceSelect,
     handleMove,
