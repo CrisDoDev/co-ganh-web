@@ -6,26 +6,68 @@ import Link from "next/link";
 interface GameControlsProps {
   onRestart: () => void;
   gameOver: boolean;
+  // Bổ sung các Props để nhận dữ liệu thời gian từ Controller (UC-1)
+  turnTimeLeft?: number;
+  isTimeOut?: boolean;
+  currentPlayer?: "X" | "O" | string | null;
 }
 
 export default function GameControls({
   onRestart,
-  // [UC-5][5.7] Người chơi thực hiện hành động thoát hoặc làm mới ván đấu
-  // (View truyền sự kiện này lên Controller để xử lý)
   gameOver,
+  // Cài đặt giá trị mặc định để không bị crash nếu Parent chưa kịp truyền vào
+  turnTimeLeft = 30,
+  isTimeOut = false,
+  currentPlayer = "X",
 }: GameControlsProps) {
-  //
-  // Lưu ý: Component này là View. Các logic như [UC-5][5.2] (Controller nhận
-  // hành động và xử lý logic) sẽ được thực hiện ở Hook (useGameState)
-  // thay vì nằm trong thân hàm render này.
   // [UC-5][5.5] View hiển thị giao diện điều khiển ván đấu
   // [UC-5][5.7] Nút để người chơi chọn thoát / làm mới ván đấu
-  //  Nút hoàn tác (undo) nước đi
   return (
-    <div className="flex flex-col gap-4">
-      <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
+    <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
+      
+      {/* =========================================================
+          KHU VỰC DASHBOARD 2 NGƯỜI CHƠI (UC-1)
+          ========================================================= */}
+      <div className="flex justify-between w-full gap-4">
+        {/* Dashboard Người chơi 1 */}
+        <div className={`flex-1 p-4 border rounded-lg ${currentPlayer === "X" ? "border-primary bg-primary/10" : "border-border bg-card"}`}>
+          <h3 className="font-bold text-sm text-center mb-2 font-serif">Người chơi 1</h3>
+          {currentPlayer === "X" ? (
+            <div className="flex flex-col items-center mt-2">
+              {/* STT 4: Chỉ báo Thời gian */}
+              <p className="text-destructive font-bold text-sm mb-1">
+                Thời gian: {isTimeOut ? "0" : turnTimeLeft}s
+              </p>
+              {/* STT 5: Thanh đường kẻ dưới thời gian (Cố định, không co giãn) */}
+              <div className="h-1.5 w-full bg-destructive rounded-full"></div>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm text-center mt-3">Đang chờ</p>
+          )}
+        </div>
+
+        {/* Dashboard Người chơi 2 */}
+        <div className={`flex-1 p-4 border rounded-lg ${currentPlayer === "O" ? "border-primary bg-primary/10" : "border-border bg-card"}`}>
+          <h3 className="font-bold text-sm text-center mb-2 font-serif">Người chơi 2</h3>
+          {currentPlayer === "O" ? (
+            <div className="flex flex-col items-center mt-2">
+              <p className="text-destructive font-bold text-sm mb-1">
+                Thời gian: {isTimeOut ? "0" : turnTimeLeft}s
+              </p>
+              <div className="h-1.5 w-full bg-destructive rounded-full"></div>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm text-center mt-3">Đang chờ</p>
+          )}
+        </div>
+      </div>
+
+      {/* =========================================================
+          KHU VỰC NÚT ĐIỀU KHIỂN & HƯỚNG DẪN 
+          ========================================================= */}
+      <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
         <div className="flex flex-wrap gap-3 justify-center">
-          {/* [UC-1] Thiết lập ván cờ (Phúc): Nút Restart gọi hàm initGame */}
+          {/* STT 6: Nút Chơi lại ván mới */}
           <Button
             onClick={onRestart}
             variant="outline"

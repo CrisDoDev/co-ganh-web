@@ -6,7 +6,6 @@ import {
   getCapturedByVay,
 } from "./captureRules";
 
-// Loại người chơi & màu cờ
 export type Player = "player1" | "player2";
 export type PieceColor = "player1" | "player2";
 
@@ -46,13 +45,15 @@ export const BOARD_SIZE = 5;
 export const TOTAL_PIECES = 16;
 export const MAX_DRAW_MOVES = 50;
 
-// Khởi tạo dữ liệu ván cờ mới
+// =========================================================================
+// [UC-1: Khởi tạo và Thiết lập ván cờ]
+// =========================================================================
 export function initializeBoard(): BoardState {
   const pieces: Piece[] = [];
   let id = 0;
   const matchId = Math.random().toString(36).slice(2, 6);
 
-  // Player 1 (Bottom)
+  // Người chơi 1 (Phía dưới bàn cờ - Quân Đen)
   for (let x = 0; x < 5; x++) {
     pieces.push({ id: `p1-${matchId}-${id++}`, x, y: 4, owner: "player1" });
   }
@@ -61,8 +62,7 @@ export function initializeBoard(): BoardState {
   pieces.push({ id: `p1-${matchId}-${id++}`, x: 0, y: 2, owner: "player1" });
 
   id = 0;
-
-  // Player 2 (Top)
+  // Người chơi 2 (Phía trên bàn cờ - Quân Trắng)
   for (let x = 0; x < 5; x++) {
     pieces.push({ id: `p2-${matchId}-${id++}`, x, y: 0, owner: "player2" });
   }
@@ -78,12 +78,14 @@ export function initializeBoard(): BoardState {
     winner: null,
     message: "Đến lượt Người chơi 1",
     movesWithoutCapture: 0,
-    phase: "playing", // Trạng thái ban đầu: Đang chơi
+    phase: "playing",
   };
 }
 
-// Cập nhật - Bùi Trung Nam:
+// =========================================================================
+// [UC-3: Xác thực nước đi hợp lệ]
 // Sử dụng BoardTopology để tìm đường đi chính xác (ngang, dọc, chéo được phép)
+// =========================================================================
 export function getValidMoves(
   pieceId: string,
   state: BoardState,
@@ -225,13 +227,17 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
   };
 }
 
+// =========================================================================
+// [UC-1: Cơ chế xử lý hết giờ suy nghĩ (Timer Auto-Switch)]
+// =========================================================================
 export function passTurn(state: BoardState): BoardState {
   if (state.phase !== "playing") return state;
   const nextPlayer = state.currentPlayer === "player1" ? "player2" : "player1";
+  const playerLabel = nextPlayer === "player1" ? "Người chơi 1" : "Người chơi 2";
 
   return {
     ...state,
     currentPlayer: nextPlayer,
-    message: `Đến lượt ${nextPlayer === "player1" ? "Người chơi 1" : "Người chơi 2"}`,
+    message: `Hết thời gian suy nghĩ! Hệ thống tự động chuyển lượt sang ${playerLabel}.`,
   };
 }

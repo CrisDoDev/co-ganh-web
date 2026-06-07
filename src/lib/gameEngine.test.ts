@@ -1,5 +1,27 @@
-import { executeMove } from "./gameEngine";
+
+import { initializeBoard, executeMove } from "./gameEngine";
 import { BoardState, GameMove, Piece } from "./types";
+
+describe("UC-1: Kiểm thử Khởi tạo và thiết lập ván cờ - Khớp đặc tả luồng UC-1", () => {
+  test("Hệ thống phải khởi tạo lưới bàn cờ chuẩn, xếp sẵn đủ 16 quân cờ của hai phe và set lượt đi đầu tiên", () => {
+    const state = initializeBoard();
+
+    // 1. Kiểm tra số lượng quân cờ khởi tạo (Phải đủ 16 quân theo chuẩn)
+    expect(state.pieces.length).toBe(16);
+
+    // Kiểm tra phân bổ quân cờ phe player1 và player2 (Mỗi bên 8 quân)
+    const player1Pieces = state.pieces.filter((p) => p.owner === "player1").length;
+    const player2Pieces = state.pieces.filter((p) => p.owner === "player2").length;
+    expect(player1Pieces).toBe(8);
+    expect(player2Pieces).toBe(8);
+
+    // 2. Kiểm tra trạng thái gốc ban đầu của ván đấu khi vừa ấn "Chơi ngay"
+    expect(state.currentPlayer).toBe("player1"); // Lượt đi đầu tiên thuộc về người chơi 1
+    expect(state.phase).toBe("playing");         // Ván đấu ở trạng thái đang chơi
+    expect(state.gameOver).toBe(false);          // Cờ hiệu kết thúc ván đấu bằng false
+    expect(state.movesWithoutCapture).toBe(0);   // Bộ đếm nước đi hòa reset về mốc 0
+  });
+});
 
 describe("UC-5: Hệ thống kiểm thử nâng cao sau Refactor - Khớp đặc tả luồng UC-5", () => {
   // Hàm Helper khởi tạo nhanh trạng thái chơi giả lập cho các nước đi tiếp diễn

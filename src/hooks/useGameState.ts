@@ -21,16 +21,17 @@ export function useGameState() {
     initialized: false,
   });
 
-  // State phục vụ Timer
+  // [UC-1: Khởi động và Thiết lập ván cờ - Bổ sung State Timer]
   const [timeLeft, setTimeLeft] = useState<number>(TURN_TIME_LIMIT);
 
   // =========================================================================
   // [UC-1: Khởi tạo và Thiết lập ván cờ]
   // =========================================================================
   const initGame = useCallback(() => {
-    setBoardState(initializeBoard());
+    const freshBoard = initializeBoard();
+    setBoardState(freshBoard);
     setSelectedPiece(null);
-    setTimeLeft(TURN_TIME_LIMIT); // Reset timer
+    setTimeLeft(TURN_TIME_LIMIT); // Khởi tạo lại 30s
   }, []);
 
   // =========================================================================
@@ -90,13 +91,16 @@ export function useGameState() {
   }, [boardState?.phase, boardState?.winner, scores.initialized]);
 
   // =========================================================================
-  // [UC-2: Di chuyển quân cờ]
+  // [Tương tác chọn quân cờ]
   // =========================================================================
   const handlePieceSelect = useCallback((pieceId: string) => {
     // 3.2.0 Controller nhận yêu cầu chọn quân cờ từ View và cập nhật quân cờ đang được chọn
     setSelectedPiece((prev) => (prev === pieceId ? null : pieceId));
   }, []);
 
+  // =========================================================================
+  // [Tương tác di chuyển quân cờ]
+  // =========================================================================
   const handleMove = useCallback(
     (toX: number, toY: number) => {
       // 3.7.0 Controller nhận yêu cầu di chuyển tới ô đích từ View
@@ -131,7 +135,7 @@ export function useGameState() {
   return {
     boardState,
     selectedPiece,
-    timeLeft,
+    timeLeft, // Xuất ra View để hiển thị thanh Progress Bar thời gian
     scores,
     initGame,
     handlePieceSelect,
