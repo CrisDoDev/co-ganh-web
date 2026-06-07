@@ -1,32 +1,26 @@
-export type Player = "player1" | "player2";
-export type PieceColor = "player1" | "player2";
+﻿import {
+  Piece,
+  BoardState,
+  GameMove,
+  Player,
+  PieceColor,
+  GamePhase,
+} from "./types";
+import { BoardTopology } from "./boardTopology";
+import {
+  getCapturedByGanh,
+  getCapturedByChet,
+  getCapturedByVay,
+} from "./captureRules";
 
-export interface Piece {
-  id: string;
-  x: number;
-  y: number;
-  owner: PieceColor;
-}
-
-export interface BoardState {
-  pieces: Piece[];
-  currentPlayer: Player;
-  moveHistory: string[];
-  gameOver: boolean;
-  winner: Player | null;
-  message: string;
-}
-
-export interface GameMove {
-  pieceId: string;
-  fromX: number;
-  fromY: number;
-  toX: number;
-  toY: number;
-}
+// Export các type cần thiết cho các chỗ khác dùng
+export * from "./types";
+export * from "./boardTopology";
+export * from "./captureRules";
 
 export const BOARD_SIZE = 5;
 export const TOTAL_PIECES = 16;
+export const MAX_DRAW_MOVES = 50;
 
 // =========================================================================
 // [UC-1: Khởi tạo và thiết lập ván cờ]
@@ -108,101 +102,75 @@ export function getValidMoves(
   return validMoves;
 }
 
+// Helper: Kiểm tra xem người chơi có bước đi hợp lệ nào không? (Check để xử Endgame do bí)
+export function hasAnyValidMoves(state: BoardState, player: Player): boolean {
+  const myPieces = state.pieces.filter((p) => p.owner === player);
+  for (const p of myPieces) {
+    if (getValidMoves(p.id, state).length > 0) return true;
+  }
+  return false;
+}
+
 // =========================================================================
-// [UC-4: Thực thi luật bắt quân]
+// [UC-2, UC-4, UC-5: Thực thi nước đi & Gộp luồng Capture]
+// Chức năng: Aggregator gom logic từ mọi nguồn tạo ra State Immutable mới
 // =========================================================================
-function processGanh(
-  movedPieceId: string,
-  newX: number,
-  newY: number,
-  pieces: Piece[],
-): string[] {
-  const capturedIds: string[] = [];
-  const movedPiece = pieces.find((p) => p.id === movedPieceId)!;
-  const opponentOwner = movedPiece.owner === "player1" ? "player2" : "player1";
 
-  // 4.1.3 Model định nghĩa 4 trục quét (Ngang, Dọc, Chéo 1, Chéo 2) đi qua tọa độ mới của quân cờ.
-  const axes = [
-    { dx: 1, dy: 0 },
-    { dx: 0, dy: 1 },
-    { dx: 1, dy: 1 },
-    { dx: 1, dy: -1 },
-  ];
+export function executeMove(move: GameMove, state: BoardState): BoardState {
+  if (state.phase !== "playing") return state;
 
-  // 4.1.4 Model lặp (Loop) qua từng trục để kiểm tra các vị trí lân cận.
-  for (const axis of axes) {
-    const p1X = newX + axis.dx;
-    const p1Y = newY + axis.dy;
-    const p2X = newX - axis.dx;
-    const p2Y = newY - axis.dy;
+  // 1. Phân giải Immutable State (Copy array)
+  let newPieces = state.pieces.map((p) => ({ ...p }));
+  const movedPiece = newPieces.find((p) => p.id === move.pieceId);
+  if (!movedPiece) return state;
 
-    const piece1 = pieces.find((p) => p.x === p1X && p.y === p1Y);
-    const piece2 = pieces.find((p) => p.x === p2X && p.y === p2Y);
+  // Cập nhật vị trí quân di chuyển
+  movedPiece.x = move.toX;
+  movedPiece.y = move.toY;
 
-    // 4.1.5 Model kiểm tra điều kiện "chủ động" và nhận diện kẹp quân (quân mình vừa đi kẹp chính giữa 2 quân địch để xét Luật Gánh, hoặc 2 quân địch kẹp 1 quân mình để xét Luật Chầu).
-    // 4.2.0 Luồng không có quân bị bắt: Tại bước 4.1.4 và 4.1.5, nếu Model không phát hiện quân địch nào thỏa mãn điều kiện kẹp quân.
-    if (
-      piece1 &&
-      piece1.owner === opponentOwner &&
-      piece2 &&
-      piece2.owner === opponentOwner
-    ) {
-      // 4.1.6 Model đưa ID của các quân địch thỏa mãn điều kiện vào mảng danh sách "bị bắt".
-      if (!capturedIds.includes(piece1.id)) capturedIds.push(piece1.id);
-      if (!capturedIds.includes(piece2.id)) capturedIds.push(piece2.id);
+  const myOwner = movedPiece.owner;
+  const opponent = myOwner === "player1" ? "player2" : "player1";
+
+  // 2. Chạy Pipeline Capture Rules [UC-4] (Gánh -> Chẹt -> Vây)
+  const capturedByGanh = getCapturedByGanh(
+    move.toX,
+    move.toY,
+    myOwner,
+    newPieces,
+  );
+  const capturedByChet = getCapturedByChet(
+    move.toX,
+    move.toY,
+    myOwner,
+    newPieces,
+  );
+
+  let totalCaptured = [...capturedByGanh, ...capturedByChet];
+  let isCaptureHappen = totalCaptured.length > 0;
+  let lastCapturedIds: string[] = [];
+
+  // Đổi màu quân bị ăn tức thì trước khi rà soát Vây (Vì Gánh/Chẹt dọn đường rồi mới tính Vây)
+  for (const piece of totalCaptured) {
+    const target = newPieces.find((p) => p.id === piece.id);
+    if (target) {
+      target.owner = myOwner;
+      lastCapturedIds.push(piece.id);
     }
   }
 
-  return capturedIds;
-}
-
-// =========================================================================
-// [UC-4: Thực thi luật bắt quân] (GIAI ĐOẠN 2)
-// =========================================================================
-function processChat(
-  movedPieceId: string,
-  newX: number,
-  newY: number,
-  pieces: Piece[],
-): string[] {
-  return []; // FIXME: Dummy function for Phase 2
-}
-
-// =========================================================================
-// [UC-4: Thực thi luật bắt quân] (GIAI ĐOẠN 2)
-// =========================================================================
-function processSurrounding(pieces: Piece[]): string[] {
-  return []; // FIXME: Dummy function for Phase 2
-}
-
-export function executeMove(move: GameMove, state: BoardState): BoardState {
-  if (state.gameOver) return state;
-
-  const newState: BoardState = {
-    pieces: state.pieces.map((p) => ({ ...p })),
-    currentPlayer: state.currentPlayer,
-    moveHistory: [...state.moveHistory],
-    gameOver: state.gameOver,
-    winner: state.winner,
-    message: state.message,
-  };
-
-  const piece = newState.pieces.find((p) => p.id === move.pieceId);
-  if (!piece) return state;
-
-  // =========================================================================
-  // [UC-4: Thực thi luật bắt quân]
-  // =========================================================================
-  // 4.1.2 Model cập nhật tọa độ mới cho quân cờ trên mảng ảo.
-  piece.x = move.toX;
-  piece.y = move.toY;
-
-  const ganhCaptured = processGanh(
-    move.pieceId,
-    move.toX,
-    move.toY,
-    newState.pieces,
-  );
+  // Chạy tiếp Vây trên dữ liệu đã biến động
+  const capturedByVay = getCapturedByVay(newPieces, opponent);
+  if (capturedByVay.length > 0) {
+    isCaptureHappen = true;
+    for (const piece of capturedByVay) {
+      const target = newPieces.find((p) => p.id === piece.id);
+      if (target) {
+        target.owner = myOwner;
+        lastCapturedIds.push(piece.id);
+      }
+    }
+  }
+    
 
   // 4.1.7 Model lặp qua mảng danh sách "bị bắt" và tiến hành đổi màu (đổi thuộc tính owner) của các quân cờ đó sang phe người vừa đánh.
   // 4.2.1 Model bỏ qua bước 4.1.6 và 4.1.7 (Mảng bị bắt rỗng).
