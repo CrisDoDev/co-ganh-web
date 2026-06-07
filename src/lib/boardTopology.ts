@@ -2,38 +2,37 @@ import { Position } from "./types";
 
 export const BOARD_SIZE = 5;
 
-// [UC-3: Board Topology - Lưới và tọa độ]
-// Chức năng: Helper quản lý topology cố định của bàn game thay vì dùng Strategy
-
 export const BoardTopology = {
-  // Check xem tọa độ (x,y) có nằm trong bàn cờ không
+
+  // 3.4.1 Hệ thống kiểm tra ô đích có nằm trong phạm vi bàn cờ hay không.
   isValidPosition: (x: number, y: number): boolean => {
     return x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE;
   },
- // Check xem ô này có đường chéo không ( x+y chẵn thì mới có)
+
+  // 3.4.2 Hệ thống kiểm tra có tồn tại đường nối chéo hợp lệ từ ô hiện tại hay không.
   canMoveDiagonal: (x: number, y: number): boolean => {
     return (x + y) % 2 === 0;
   },
-   // Lấy tất cả các ô xung quanh (neighbors) có đường nối hợp lệ
+
+  // 3.3.0 Hệ thống xác định các ô lân cận có thể di chuyển dựa trên topology bàn cờ.
   getAvailableNeighbors: (x: number, y: number): Position[] => {
     const neighbors: Position[] = [];
 
-    // Các hướng ngang, dọc (luôn luôn có ở mọi ô)
     const orthogonalDirs = [
-      { dx: 0, dy: -1 }, // Lên
-      { dx: 0, dy: 1 }, // Xuống
-      { dx: -1, dy: 0 }, // Trái
-      { dx: 1, dy: 0 }, // Phải
+      { dx: 0, dy: -1 },
+      { dx: 0, dy: 1 },
+      { dx: -1, dy: 0 },
+      { dx: 1, dy: 0 },
     ];
 
-    // Các hướng chéo (chỉ có ở các ô canMoveDiagonal)
     const diagonalDirs = [
-      { dx: -1, dy: -1 }, // Lên trái
-      { dx: 1, dy: -1 }, // Lên phải
-      { dx: -1, dy: 1 }, // Xuống trái
-      { dx: 1, dy: 1 }, // Xuống phải
+      { dx: -1, dy: -1 },
+      { dx: 1, dy: -1 },
+      { dx: -1, dy: 1 },
+      { dx: 1, dy: 1 },
     ];
 
+    // 3.4.2 Xác định tập hướng di chuyển hợp lệ (ngang, dọc, chéo được phép).
     const dirsToUse = BoardTopology.canMoveDiagonal(x, y)
       ? [...orthogonalDirs, ...diagonalDirs]
       : orthogonalDirs;
@@ -41,11 +40,14 @@ export const BoardTopology = {
     for (const dir of dirsToUse) {
       const newX = x + dir.dx;
       const newY = y + dir.dy;
+
+      // 3.4.1 Chỉ chấp nhận các ô đích nằm trong phạm vi bàn cờ.
       if (BoardTopology.isValidPosition(newX, newY)) {
         neighbors.push({ x: newX, y: newY });
       }
     }
 
+    // 3.5.0 Trả về danh sách các ô đích hợp lệ theo topology.
     return neighbors;
   },
 };

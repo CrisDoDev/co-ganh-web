@@ -68,24 +68,20 @@ export function getValidMoves(
   pieceId: string,
   state: BoardState,
 ): Array<{ x: number; y: number }> {
+  // 3.2.0 Hệ thống kiểm tra quân cờ có thuộc quyền điều khiển của người chơi hiện tại hay không.
   const piece = state.pieces.find((p) => p.id === pieceId);
+
+   //[AF1] Quân cờ không tồn tại hoặc không thuộc lượt hiện tại.
   if (!piece || piece.owner !== state.currentPlayer) return [];
 
+  // 3.3.0 Hệ thống xác định các ô lân cận có thể di chuyển dựa trên topology bàn cờ
   const neighbors = BoardTopology.getAvailableNeighbors(piece.x, piece.y);
 
-  // Lọc bỏ những ô đã có quân chăng ngang
+ // 3.4.0 Hệ thống kiểm tra tính hợp lệ của từng ô đích.
+ // 3.5.0 Hệ thống trả về danh sách nước đi hợp lệ.
   return neighbors.filter(
     (n) => !state.pieces.some((p) => p.x === n.x && p.y === n.y),
   );
-}
-
-// Helper: Kiểm tra xem người chơi có bước đi hợp lệ nào không? (Check để xử Endgame do bí)
-export function hasAnyValidMoves(state: BoardState, player: Player): boolean {
-  const myPieces = state.pieces.filter((p) => p.owner === player);
-  for (const p of myPieces) {
-    if (getValidMoves(p.id, state).length > 0) return true;
-  }
-  return false;
 }
 
 function processGanh(

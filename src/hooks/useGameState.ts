@@ -10,34 +10,29 @@ export function useGameState() {
   const [boardState, setBoardState] = useState<BoardState | null>(null);
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
 
-  // =========================================================================
-  // [UC-1: Khởi động và Thiết lập ván cờ]
-  // =========================================================================
   const initGame = useCallback(() => {
     setBoardState(initializeBoard());
     setSelectedPiece(null);
   }, []);
 
-  // =========================================================================
-  // [UC-2: Tương tác di chuyển quân cờ]
-  // =========================================================================
   const handlePieceSelect = useCallback((pieceId: string) => {
-    // UC-2.1: Người chơi click vào quân cờ thuộc phe mình
-    // UC-2.2: View gửi event sang Controller (handlePieceSelect)
 
-    // UC-2.3: Controller xử lý logic chọn quân
+    // 3.2.0 Controller nhận yêu cầu chọn quân cờ từ View và cập nhật quân cờ đang được chọn
+
     setSelectedPiece((prev) => (prev === pieceId ? null : pieceId));
 
-     // UC-2.3.1: Nếu đã chọn thì bỏ chọn (toggle)
-    // UC-2.3.2: Nếu chưa chọn thì set quân đang được chọn
   }, []);
 
   const handleMove = useCallback(
     (toX: number, toY: number) => {
-        // UC-2.7: Người chơi click vào ô đích
+
+      // 3.7.0 Controller nhận yêu cầu di chuyển tới ô đích từ View
+
       if (!boardState || !selectedPiece) return;
 
       const piece = boardState.pieces.find((p) => p.id === selectedPiece);
+
+      // [AF1 - 3.2.1] Không tìm thấy quân cờ hợp lệ
       if (!piece) return;
 
       const move: GameMove = {
@@ -47,21 +42,16 @@ export function useGameState() {
         toX,
         toY,
       };
-       // UC-2.8: Controller gửi request sang Model (executeMove)
 
-      // =========================================================================
-      // [UC-4: Thực thi luật bắt quân]
-      // =========================================================================
-      // 4.1 Controller gửi yêu cầu thực thi nước đi (kèm move) sang Model (gameEngine)
+      // 3.8.0 Controller gửi yêu cầu xác nhận nước đi tới Model
+
       const newState = executeMove(move, boardState);
 
-      // 4.6 Controller cập nhật State nội bộ, kích hoạt View re-render lại giao diện
+      // 3.9.0 Nhận trạng thái mới sau khi nước đi được xác nhận
 
-      // UC-2.9: Controller nhận state mới từ Model
       setBoardState(newState);
 
-
-    // UC-2.10: Reset trạng thái chọn quân cờ sau khi đi xong
+      // Reset trạng thái chọn quân sau khi xử lý xong
       setSelectedPiece(null);
     },
     [boardState, selectedPiece],
