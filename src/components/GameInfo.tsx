@@ -20,11 +20,11 @@ export default function GameInfo({
   return (
     <div
       className={`
-        bg-card border-2 rounded-lg p-6 shadow-lg transition-all
+        bg-card border-2 rounded-lg p-6 shadow-lg transition-all relative overflow-hidden
         ${isActive ? `${color} ring-2 ring-offset-2 ring-primary` : "border-border"}
       `}
     >
-      <div className="space-y-4">
+      <div className="space-y-4 relative z-10">
         <h3 className="text-xl font-serif font-bold text-primary text-center">
           {playerName}
         </h3>

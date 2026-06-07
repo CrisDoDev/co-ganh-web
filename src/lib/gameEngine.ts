@@ -1,4 +1,3 @@
-
 import { BoardTopology } from "./boardTopology";
 import {
   getCapturedByGanh,
@@ -51,7 +50,6 @@ export function initializeBoard(): BoardState {
   return {
     pieces,
     currentPlayer: "player1",
-    moveHistory: [],
     gameOver: false,
     winner: null,
     phase: "playing",
@@ -185,7 +183,8 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
   ) {
     phase = "game_over";
     winner = myOwner;
-    const loserName = nextPlayer === "player1" ? "Người chơi 1" : "Người chơi 2";
+    const loserName =
+      nextPlayer === "player1" ? "Người chơi 1" : "Người chơi 2";
     const winnerName = winner === "player1" ? "Người chơi 1" : "Người chơi 2";
     message = `${loserName} hết nước đi. ${winnerName} chiến thắng!`;
   }
@@ -207,7 +206,6 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
   return {
     pieces: newPieces,
     currentPlayer: nextPlayer,
-    moveHistory: [...state.moveHistory],
     gameOver: phase !== "playing",
     winner,
     phase,
@@ -216,18 +214,17 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
     lastCapturedIds,
   };
 }
-
 // =========================================================================
-// [UC-1: Cơ cơ chế xử lý hết giờ suy nghĩ (Timer Auto-Switch)]
+// [UC-1: Đếm ngược thời gian]
+// Chức năng: Helper để cưỡng chế đổi lượt nếu người chơi bị Timeout
 // =========================================================================
 export function passTurn(state: BoardState): BoardState {
   if (state.phase !== "playing") return state;
   const nextPlayer = state.currentPlayer === "player1" ? "player2" : "player1";
-  const playerLabel = nextPlayer === "player1" ? "Người chơi 1" : "Người chơi 2";
 
   return {
     ...state,
     currentPlayer: nextPlayer,
-    message: `Hết thời gian suy nghĩ! Hệ thống tự động chuyển lượt sang ${playerLabel}.`,
+    message: `Đến lượt ${nextPlayer === "player1" ? "Người chơi 1" : "Người chơi 2"}`,
   };
 }
