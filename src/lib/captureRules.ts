@@ -121,3 +121,59 @@ export function getCapturedByChet(
 
   return Array.from(new Set(capturedPieces));
 }
+
+// 3. LUẬT VÂY (Flood Fill Algorithm)
+// Quét toàn bộ lưới. Tìm các cụm quân địch bị khóa chặt (Không có ô trống nào kề cạnh).
+export function getCapturedByVay(
+  pieces: Piece[],
+  opponentOwner: string,
+): Piece[] {
+  let totallyCaptured: Piece[] = [];
+  const opponentPieces = pieces.filter((p) => p.owner === opponentOwner);
+  const visited = new Set<string>();
+
+  for (const piece of opponentPieces) {
+    const key = `${piece.x},${piece.y}`;
+    if (visited.has(key)) continue;
+
+    // Bắt đầu cụm mới
+    const cluster: Piece[] = [];
+    const queue: Piece[] = [piece];
+    let hasFreedom = false;
+
+    // Flood Fill
+    let head = 0;
+    while (head < queue.length) {
+      const current = queue[head++];
+      const currentKey = `${current.x},${current.y}`;
+
+      if (!visited.has(currentKey)) {
+        visited.add(currentKey);
+        cluster.push(current);
+
+        const neighbors = BoardTopology.getAvailableNeighbors(
+          current.x,
+          current.y,
+        );
+        for (const n of neighbors) {
+          const occ = pieces.find((p) => p.x === n.x && p.y === n.y);
+          if (!occ) {
+            hasFreedom = true; // Cụm này có ô trống kế bên => Thoát vây
+          } else if (
+            occ.owner === opponentOwner &&
+            !visited.has(`${occ.x},${occ.y}`)
+          ) {
+            queue.push(occ);
+          }
+        }
+      }
+    }
+
+    if (!hasFreedom) {
+      // Bị vây kín toàn bộ cụm
+      totallyCaptured.push(...cluster);
+    }
+  }
+
+  return totallyCaptured;
+}
