@@ -5,6 +5,8 @@ interface GameInfoProps {
   isActive: boolean;
   pieces: number;
   color: string;
+  timeLeft?: number; // Cập nhật Nhận dữ liệu đếm ngược
+  score?: number; // Cập nhật: Nhận tổng số trận thắng
 }
 
 export default function GameInfo({
@@ -12,13 +14,15 @@ export default function GameInfo({
   isActive,
   pieces,
   color,
+  timeLeft,
+  score = 0,
 }: GameInfoProps) {
   return (
     <div
       className={`
-      bg-card border-2 rounded-lg p-6 shadow-lg transition-all
-      ${isActive ? `${color} ring-2 ring-offset-2 ring-primary` : "border-border"}
-    `}
+        bg-card border-2 rounded-lg p-6 shadow-lg transition-all
+        ${isActive ? `${color} ring-2 ring-offset-2 ring-primary` : "border-border"}
+      `}
     >
       <div className="space-y-4">
         <h3 className="text-xl font-serif font-bold text-primary text-center">
@@ -27,9 +31,9 @@ export default function GameInfo({
 
         <div
           className={`
-          p-4 rounded-lg
-          ${playerName.includes("1") ? "bg-primary/10" : "bg-secondary/10"}
-        `}
+            p-4 rounded-lg
+            ${playerName.includes("1") ? "bg-primary/10" : "bg-secondary/10"}
+          `}
         >
           <p className="text-center text-2xl font-serif font-bold text-primary">
             {playerName.includes("1") ? "●" : "○"}
@@ -49,6 +53,24 @@ export default function GameInfo({
             <span className="font-semibold text-foreground">Số quân:</span>{" "}
             {pieces}/16
           </p>
+
+          {/* Cập nhật: Hiển thị tổng số trận thắng chung cuộc của người chơi */}
+          <p className="text-muted-foreground">
+            <span className="font-semibold text-foreground">
+              Thắng chung cuộc:
+            </span>{" "}
+            <span className="font-bold text-lg text-primary">{score} ván</span>
+          </p>
+
+          {/* Cập nhật: Hiển thị đồng hồ đếm ngược nếu đang trong lượt đi */}
+          {isActive && timeLeft !== undefined && (
+            <p className="text-muted-foreground items-center text-[#a94438]">
+              <span className="font-semibold text-[#a94438]">Thời gian:</span>{" "}
+              <span className="text-base font-bold animate-pulse">
+                {timeLeft}s
+              </span>
+            </p>
+          )}
         </div>
 
         {isActive && (
