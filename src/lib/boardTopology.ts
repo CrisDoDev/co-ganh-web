@@ -1,7 +1,9 @@
+//Cập nhật - Bùi Trung Nam:
+//Bổ sung BoardTopology để kiểm tra tính hợp lệ của nước đi dựa trên topology bàn cờ
+
 import { Position } from "./types";
 
 export const BOARD_SIZE = 5;
-
 export const BoardTopology = {
 
   // 3.4.1 Hệ thống kiểm tra ô đích có nằm trong phạm vi bàn cờ hay không.

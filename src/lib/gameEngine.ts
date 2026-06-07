@@ -61,7 +61,7 @@ export function initializeBoard(): BoardState {
     message: "Đến lượt Người chơi 1",
   };
 }
-
+// Cập nhật - Bùi Trung Nam:
 // Sử dụng BoardTopology để tìm đường đi chính xác (ngang, dọc, chéo được phép)
 
 export function getValidMoves(
