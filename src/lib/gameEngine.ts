@@ -1,6 +1,16 @@
+
+import { BoardTopology } from "./boardTopology";
+import {
+  getCapturedByGanh,
+  getCapturedByChet,
+  getCapturedByVay,
+} from "./captureRules";
+
+// Loại người chơi & màu cờ
 export type Player = "player1" | "player2";
 export type PieceColor = "player1" | "player2";
 
+// Đối tượng quân cờ
 export interface Piece {
   id: string;
   x: number;
@@ -20,8 +30,10 @@ export interface BoardState {
   message: string;
   movesWithoutCapture: number;
   phase: GamePhase; // Thuộc tính cốt lõi của State Pattern quản lý hành vi game
+  lastCapturedIds?: string[];
 }
 
+// Struct thông tin khi di chuyển
 export interface GameMove {
   pieceId: string;
   fromX: number;
@@ -38,24 +50,25 @@ export const MAX_DRAW_MOVES = 50;
 export function initializeBoard(): BoardState {
   const pieces: Piece[] = [];
   let id = 0;
+  const matchId = Math.random().toString(36).slice(2, 6);
 
   // Player 1 (Bottom)
   for (let x = 0; x < 5; x++) {
-    pieces.push({ id: `p1-${id++}`, x, y: 4, owner: "player1" });
+    pieces.push({ id: `p1-${matchId}-${id++}`, x, y: 4, owner: "player1" });
   }
-  pieces.push({ id: `p1-${id++}`, x: 0, y: 3, owner: "player1" });
-  pieces.push({ id: `p1-${id++}`, x: 4, y: 3, owner: "player1" });
-  pieces.push({ id: `p1-${id++}`, x: 0, y: 2, owner: "player1" });
+  pieces.push({ id: `p1-${matchId}-${id++}`, x: 0, y: 3, owner: "player1" });
+  pieces.push({ id: `p1-${matchId}-${id++}`, x: 4, y: 3, owner: "player1" });
+  pieces.push({ id: `p1-${matchId}-${id++}`, x: 0, y: 2, owner: "player1" });
 
   id = 0;
 
   // Player 2 (Top)
   for (let x = 0; x < 5; x++) {
-    pieces.push({ id: `p2-${id++}`, x, y: 0, owner: "player2" });
+    pieces.push({ id: `p2-${matchId}-${id++}`, x, y: 0, owner: "player2" });
   }
-  pieces.push({ id: `p2-${id++}`, x: 0, y: 1, owner: "player2" });
-  pieces.push({ id: `p2-${id++}`, x: 4, y: 1, owner: "player2" });
-  pieces.push({ id: `p2-${id++}`, x: 4, y: 2, owner: "player2" });
+  pieces.push({ id: `p2-${matchId}-${id++}`, x: 0, y: 1, owner: "player2" });
+  pieces.push({ id: `p2-${matchId}-${id++}`, x: 4, y: 1, owner: "player2" });
+  pieces.push({ id: `p2-${matchId}-${id++}`, x: 4, y: 2, owner: "player2" });
 
   return {
     pieces,
@@ -69,85 +82,40 @@ export function initializeBoard(): BoardState {
   };
 }
 
-function isValidPosition(x: number, y: number, pieces: Piece[]): boolean {
-  if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) {
-    return false;
-  }
-  return !pieces.some((p) => p.x === x && p.y === y);
-}
-
+// Cập nhật - Bùi Trung Nam:
+// Sử dụng BoardTopology để tìm đường đi chính xác (ngang, dọc, chéo được phép)
 export function getValidMoves(
   pieceId: string,
   state: BoardState,
 ): Array<{ x: number; y: number }> {
+  // 3.2.0 Hệ thống kiểm tra quân cờ có thuộc quyền điều khiển của người chơi hiện tại hay không.
   const piece = state.pieces.find((p) => p.id === pieceId);
-  if (!piece || piece.owner !== state.currentPlayer) {
-    return [];
-  }
 
-  const validMoves: Array<{ x: number; y: number }> = [];
-  const directions = [
-    { dx: 0, dy: -1 },
-    { dx: 0, dy: 1 },
-    { dx: -1, dy: 0 },
-    { dx: 1, dy: 0 },
-    { dx: -1, dy: -1 },
-    { dx: 1, dy: -1 },
-    { dx: -1, dy: 1 },
-    { dx: 1, dy: 1 },
-  ];
+  // [AF1] Quân cờ không tồn tại hoặc không thuộc lượt hiện tại.
+  if (!piece || piece.owner !== state.currentPlayer) return [];
 
-  for (const dir of directions) {
-    const newX = piece.x + dir.dx;
-    const newY = piece.y + dir.dy;
+  // 3.3.0 Hệ thống xác định các ô lân cận có thể di chuyển dựa trên topology bàn cờ
+  const neighbors = BoardTopology.getAvailableNeighbors(piece.x, piece.y);
 
-    if (isValidPosition(newX, newY, state.pieces)) {
-      validMoves.push({ x: newX, y: newY });
-    }
-  }
-  return validMoves;
+  // 3.4.0 Hệ thống kiểm tra tính hợp lệ của từng ô đích.
+  // 3.5.0 Hệ thống trả về danh sách nước đi hợp lệ.
+  return neighbors.filter(
+    (n) => !state.pieces.some((p) => p.x === n.x && p.y === n.y),
+  );
 }
 
-function processGanh(
-  movedPieceId: string,
-  newX: number,
-  newY: number,
-  pieces: Piece[],
-): string[] {
-  const capturedIds: string[] = [];
-  const movedPiece = pieces.find((p) => p.id === movedPieceId)!;
-  const opponentOwner = movedPiece.owner === "player1" ? "player2" : "player1";
-
-  const axes = [
-    { dx: 1, dy: 0 },
-    { dx: 0, dy: 1 },
-    { dx: 1, dy: 1 },
-    { dx: 1, dy: -1 },
-  ];
-
-  for (const axis of axes) {
-    const p1X = newX + axis.dx;
-    const p1Y = newY + axis.dy;
-    const p2X = newX - axis.dx;
-    const p2Y = newY - axis.dy;
-
-    const piece1 = pieces.find((p) => p.x === p1X && p.y === p1Y);
-    const piece2 = pieces.find((p) => p.x === p2X && p.y === p2Y);
-
-    if (
-      piece1 &&
-      piece1.owner === opponentOwner &&
-      piece2 &&
-      piece2.owner === opponentOwner
-    ) {
-      if (!capturedIds.includes(piece1.id)) capturedIds.push(piece1.id);
-      if (!capturedIds.includes(piece2.id)) capturedIds.push(piece2.id);
-    }
+// Helper: Kiểm tra xem người chơi có bước đi hợp lệ nào không? (Check để xử Endgame do bí)
+export function hasAnyValidMoves(state: BoardState, player: Player): boolean {
+  const myPieces = state.pieces.filter((p) => p.owner === player);
+  for (const p of myPieces) {
+    if (getValidMoves(p.id, state).length > 0) return true;
   }
-
-  return capturedIds;
+  return false;
 }
 
+// =========================================================================
+// [UC-2, UC-4, UC-5: Thực thi nước đi & Gộp luồng Capture]
+// =========================================================================
 export function executeMove(move: GameMove, state: BoardState): BoardState {
   if (state.phase !== "playing") return state;
 
@@ -161,6 +129,7 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
   const myOwner = movedPiece.owner;
   const opponent = myOwner === "player1" ? "player2" : "player1";
 
+  // Chạy Pipeline Capture Rules [UC-4] (Gánh -> Chẹt -> Vây)
   const capturedByGanh = getCapturedByGanh(
     move.toX,
     move.toY,
@@ -226,8 +195,7 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
   ) {
     phase = "game_over";
     winner = myOwner;
-    const loserName =
-      nextPlayer === "player1" ? "Người chơi 1" : "Người chơi 2";
+    const loserName = nextPlayer === "player1" ? "Người chơi 1" : "Người chơi 2";
     const winnerName = winner === "player1" ? "Người chơi 1" : "Người chơi 2";
     message = `${loserName} hết nước đi. ${winnerName} chiến thắng!`;
   }
@@ -247,6 +215,7 @@ export function executeMove(move: GameMove, state: BoardState): BoardState {
   return {
     pieces: newPieces,
     currentPlayer: nextPlayer,
+    moveHistory: [...state.moveHistory],
     gameOver: phase !== "playing",
     winner,
     phase,
