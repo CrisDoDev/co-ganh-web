@@ -1,4 +1,4 @@
-// src/lib/types.ts
+
 
 // Loại người chơi & màu cờ
 export type Player = "player1" | "player2";
@@ -24,10 +24,11 @@ export type GamePhase = "playing" | "game_over" | "draw";
 export interface BoardState {
   pieces: Piece[];
   currentPlayer: Player;
+  moveHistory?: string[]; // Mảng lưu lịch sử nước đi phục vụ đồng bộ hệ thống
   gameOver: boolean; // UC-5: True nếu có state game_over hoặc draw
   winner: Player | null; // Lấy data winner khi GameOverState
   phase: GamePhase; // State Pattern Behavior
-  movesWithoutCapture: number; // Đếm số bước đi không có bắt quân để check HÒA (limit 50)
+  movesWithoutCapture: number; // Thuộc tính phục vụ luật Hòa (Giới hạn 50 nước) - UC-5
   message: string;
   lastCapturedIds?: string[];
 }
